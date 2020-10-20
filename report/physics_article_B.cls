@@ -87,5 +87,5 @@
 \cfoot{\thepage}
 \rfoot{}
 
-\title{\@mytitle\vspace{-1.5cm}}
+\title{\@mytitle}
 
