@@ -16,7 +16,8 @@ class Percolation:
         self.gui_manager = gui_manager
         self.window_size = window_size
         self.grid_size = (self.grid_width, self.grid_height) = (400, 400)
-        self.grid = 255 * np.ones([self.grid_width, self.grid_height, 3])
+        self.max_array_length = self.grid_width*self.grid_height 
+        self.sites = np.array([])
         self.p_slider = pygame_gui.elements.UIHorizontalSlider(
             pygame.Rect((10, 670), (600, 20)),
             0.0,
@@ -34,7 +35,9 @@ class Percolation:
         )
 
     def Draw(self, window_surf):
-        pygame.surfarray.blit_array(self.draw_surface, self.grid)
+        self.draw_surface.fill((255,255,255))
+        for index in self.grid:
+            self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,0,0))
         window_surf.blit(
             pygame.transform.scale(self.draw_surface, (600, 600)), (10, 60)
         )
@@ -44,9 +47,9 @@ class Percolation:
         window_surf.blit(img, (300 - img.get_rect().width // 2, 690))
 
     def GenRandomStart(self):
-        rand_points = (np.random.rand(self.grid_width,self.grid_height)>=0.25).reshape((self.grid_width,self.grid_width,1))
-        self.grid = np.repeat(rand_points,3,axis = 2)*255
-
+        ran = np.arange(0,self.max_array_length)
+        np.random.shuffle(ran)
+        self.grid = ran[0:self.max_array_length//4]
 
 # Create pygame window and gui manager
 pygame.init()
