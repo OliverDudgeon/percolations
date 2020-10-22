@@ -1,0 +1,19 @@
+{
+    "cSpell.words": [
+        "hoshen",
+        "hoshen kopelman",
+        "is",
+        "is running",
+        "kopelman",
+        "nexts",
+        "perc",
+        "rect",
+        "running",
+        "square",
+        "square perc step",
+        "step"
+    ],
+    "python.linting.pylintArgs": [
+        "--extension-pkg-whitelist=lxml"
+    ]
+}
