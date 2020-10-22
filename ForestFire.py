@@ -18,19 +18,19 @@ class ForestFire:
         
         
         self.initial_slider = pygame_gui.elements.UIHorizontalSlider(
-            pygame.Rect((10, 670), (600, 20)),0.25,(0.0, 1.0),gui_manager,)
+            pygame.Rect((10, 670), (600, 20)),0.2,(0.0, 1.0),gui_manager,)
         self.initial_slider_label = pygame_gui.elements.UILabel(
             pygame.Rect((10,690),(300,20)),f'Initial tree coverage fraction = {self.initial_slider.current_value}',
             gui_manager)
         
         self.p_grow_slider = pygame_gui.elements.UIHorizontalSlider(
-            pygame.Rect((10,730),(600,20)),0.25,(0.0,1.0),gui_manager)
+            pygame.Rect((10,730),(600,20)),0.05,(0.0,0.2),gui_manager)
         self.grow_slider_label = pygame_gui.elements.UILabel(
             pygame.Rect((10,750),(300,20)),f'Growth probability = {self.p_grow_slider.current_value}',
             gui_manager)
         
         self.p_fire_slider = pygame_gui.elements.UIHorizontalSlider(
-            pygame.Rect((10,790),(600,20)),0.25,(0.0,1.0),gui_manager)
+            pygame.Rect((10,790),(600,20)),0.001,(0.0,0.01),gui_manager)
         self.fire_slider_label = pygame_gui.elements.UILabel(
             pygame.Rect((10,810),(300,20)),f'Spontaneous fire probability = {self.p_fire_slider.current_value}',
             gui_manager)
@@ -99,6 +99,19 @@ class ForestFire:
                     if self.treegrid_array[dy,dx-1] == 1:
                         self.firegrid_array[dy,dx-1] = 1
                         self.treegrid_array[dy,dx-1] = 0
+                        # diagonal neighbours
+                    if self.treegrid_array[dy+1,dx+1] == 1:
+                        self.firegrid_array[dy+1,dx+1] = 1
+                        self.treegrid_array[dy+1,dx+1] = 0
+                    if self.treegrid_array[dy+1,dx-1] == 1:
+                        self.firegrid_array[dy+1,dx-1] = 1
+                        self.treegrid_array[dy+1,dx-1] = 0
+                    if self.treegrid_array[dy-1,dx+1] == 1:
+                        self.firegrid_array[dy-1,dx+1] = 1
+                        self.treegrid_array[dy-1,dx+1] = 0
+                    if self.treegrid_array[dy-1,dx-1] == 1:
+                        self.firegrid_array[dy-1,dx-1] = 1
+                        self.treegrid_array[dy-1,dx-1] = 0
                     self.firegrid_array[dy,dx] = 0
                         
         self.treegrid_array[0,:] = self.treegrid_array[:,0] = \
