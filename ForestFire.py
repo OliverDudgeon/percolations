@@ -7,7 +7,7 @@ class ForestFire:
         (window_width,window_height) = window_size
         self.gui_manager = gui_manager
         self.window_size = window_size
-        self.grid_size = (self.grid_width,self.grid_height) = (200,200)
+        self.grid_size = (self.grid_width,self.grid_height) = (100,100)
         self.max_array_length = self.grid_width*self.grid_height
         self.sites = np.array([])
         self.draw_call = False
@@ -41,9 +41,7 @@ class ForestFire:
         if self.draw_call:
             self.draw_surface.fill((44,20,1))
             for index in self.treegrid:
-                self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
-                global testvar
-                testvar = self.treegrid_array # seems rotated wrt image?
+                # self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
                 self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,100,0))
             # for index in self.firegrid:
             #     self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,0,1))
@@ -51,35 +49,43 @@ class ForestFire:
             self.draw_call = False
         window_surf.blit(pygame.transform.scale(self.draw_surface, (600, 600)), (10, 60))
         
-    def Draw_subsequent(self, window_surf):
-        if self.draw_subsequent_call:
-            for index in self.treegrid:
-                # self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
-                # global testvar
-                # testvar = self.treegrid_array # seems rotated wrt image?
-                self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,100,0))
-            self.draw_subsequent_call = False
-                
+    # def Draw_subsequent(self, window_surf):
+    #     #if self.draw_subsequent_call:
+    #         self.draw_surface.fill((44,20,1))
+    #         for index in self.treegrid:
+    #             # self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
+    #             # global testvar
+    #             # testvar = self.treegrid_array # seems rotated wrt image?
+    #             self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,100,0))
+    #         #self.draw_subsequent_call = False
+    #         window_surf.blit(pygame.transform.scale(self.draw_surface, (600, 600)), (10, 60))
             
         
     def GenRandomStart(self):
         self.treegrid = np.where(np.random.rand(self.max_array_length) < self.initial_slider.current_value)[0]
         # self.grid[0,:] = self.grid[:,0] = self.grid[self.grid_height,:] = self.grid[:,self.grid_width] = 0
+        for index in self.treegrid:
+            self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
         self.draw_call = True
+        self.Draw(window_surface)
        
        
-    def Burning(self): # WHY IS THERE ALWAYS AN INITIAL GROWTH PHASE?
+    def Burning(self): 
         f = self.p_fire_slider.current_value
         p = self.p_grow_slider.current_value
         for dx in range(0,self.grid_width):
             for dy in range(0,self.grid_height):
                 if self.treegrid_array[dy,dx] == 0 and np.random.random() < p:
-                    self.treegrid_array[dy,dx] = 1
-                elif self.treegrid_array[dy,dx] == 1 and np.random.random() < f:
+                    self.treegrid_array[dy,dx] = -1
+                if self.treegrid_array[dy,dx] == 1 and np.random.random() < f:
                     self.treegrid_array[dy,dx] = 0 # And then firegrid comes in
-        self.treegrid = np.ravel_multi_index(np.nonzero(self.treegrid_array),(self.grid_height,self.grid_width))
-        self.draw_subsequent_call = True
-        self.Draw_subsequent(window_surface)
+        self.treegrid_array = np.absolute(self.treegrid_array)
+        self.treegrid = np.ravel_multi_index(np.nonzero(self.treegrid_array),
+                                             (self.grid_height,self.grid_width))
+        self.draw_call = True
+        pygame.time.wait(50)
+       # self.draw_subsequent_call = True
+        # self.Draw_subsequent(window_surface)
         
         # for dx in range(0,np.size(self.treegrid)):
         #     if np.random.random() < f:
@@ -137,7 +143,7 @@ while is_running:
                     is_playing = not is_playing
                     if is_playing: button_play.set_text("Pause")
                     else: button_play.set_text("Play")
-                    #perc_manager.Burning()
+                    # perc_manager.Burning()
             if event.user_type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
                 if event.ui_element == perc_manager.initial_slider:
                     ISVal = format(perc_manager.initial_slider.current_value,'.2f')
@@ -157,9 +163,10 @@ while is_running:
                     is_playing = False
                     button_play.set_text("Play")
                     perc_manager.GenRandomStart()
-        if is_playing:
-            perc_manager.Burning()
-        gui_manager.process_events(event)
+    if is_playing:
+        perc_manager.Burning()
+        perc_manager.Draw(window_surface)
+    gui_manager.process_events(event)
 
     time_timer += time_delta
     if time_timer > 0.5:
