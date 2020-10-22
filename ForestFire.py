@@ -12,8 +12,9 @@ class ForestFire:
         self.sites = np.array([])
         self.draw_call = False
         self.draw_subsequent_call = False
-        self.firegrid = np.array([])
+        self.firegrid_array = np.zeros([self.grid_height,self.grid_width])
         self.treegrid_array = np.zeros([self.grid_height,self.grid_width])
+        self.firegrid = np.array([]) #Should it be an array or a list?
         
         
         self.initial_slider = pygame_gui.elements.UIHorizontalSlider(
@@ -42,7 +43,9 @@ class ForestFire:
             self.draw_surface.fill((44,20,1))
             for index in self.treegrid:
                 # self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
-                self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,100,0))
+                self.draw_surface.set_at((index%self.grid_height,index//self.grid_width),(0,100,0))
+            for index in self.firegrid:
+                self.draw_surface.set_at((index%self.grid_height,index//self.grid_width),(255,40,7))
             # for index in self.firegrid:
             #     self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,0,1))
             
@@ -66,6 +69,8 @@ class ForestFire:
         # self.grid[0,:] = self.grid[:,0] = self.grid[self.grid_height,:] = self.grid[:,self.grid_width] = 0
         for index in self.treegrid:
             self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
+            self.treegrid_array[0,:] = self.treegrid_array[:,0] = \
+                self.treegrid_array[self.grid_height-1,:] = self.treegrid_array[:,self.grid_width-1] = 0
         self.draw_call = True
         self.Draw(window_surface)
        
@@ -75,12 +80,35 @@ class ForestFire:
         p = self.p_grow_slider.current_value
         for dx in range(0,self.grid_width):
             for dy in range(0,self.grid_height):
-                if self.treegrid_array[dy,dx] == 0 and np.random.random() < p:
-                    self.treegrid_array[dy,dx] = -1
-                if self.treegrid_array[dy,dx] == 1 and np.random.random() < f:
-                    self.treegrid_array[dy,dx] = 0 # And then firegrid comes in
+                if self.treegrid_array[dy,dx] == 0 and self.firegrid_array[dy,dx] == 0 and np.random.random() < p:  
+                    self.treegrid_array[dy,dx] = -1 # Tree grows; -1 so it doesn't catch fire same iteration
+                if self.treegrid_array[dy,dx] == 1:
+                    if np.random.random() < f:
+                        self.treegrid_array[dy,dx] = 0 
+                        self.firegrid_array[dy,dx] = 1
+                if self.firegrid_array[dy,dx] == 1:
+                    if self.treegrid_array[dy+1,dx] == 1: 
+                        self.firegrid_array[dy+1,dx] = 1
+                        self.treegrid_array[dy+1,dx] = 0
+                    if self.treegrid_array[dy-1,dx] == 1:
+                        self.firegrid_array[dy-1,dx] = 1
+                        self.treegrid_array[dy-1,dx] = 0
+                    if self.treegrid_array[dy,dx+1] == 1:
+                        self.firegrid_array[dy,dx+1] = 1
+                        self.treegrid_array[dy,dx+1] = 0
+                    if self.treegrid_array[dy,dx-1] == 1:
+                        self.firegrid_array[dy,dx-1] = 1
+                        self.treegrid_array[dy,dx-1] = 0
+                    self.firegrid_array[dy,dx] = 0
+                        
+        self.treegrid_array[0,:] = self.treegrid_array[:,0] = \
+            self.treegrid_array[self.grid_height-1,:] = self.treegrid_array[:,self.grid_width-1] = 0
         self.treegrid_array = np.absolute(self.treegrid_array)
+        self.firegrid_array[0,:] = self.firegrid_array[:,0] = \
+            self.firegrid_array[self.grid_height-1,:] = self.firegrid_array[:,self.grid_width-1] = 0
         self.treegrid = np.ravel_multi_index(np.nonzero(self.treegrid_array),
+                                             (self.grid_height,self.grid_width))
+        self.firegrid = np.ravel_multi_index(np.nonzero(self.firegrid_array),
                                              (self.grid_height,self.grid_width))
         self.draw_call = True
         pygame.time.wait(50)
