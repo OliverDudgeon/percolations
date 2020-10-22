@@ -8,14 +8,12 @@ import pygame_gui
 # of mistakes. In some places I didn't really understand what Adam had written
 # so just left it alone....
 
-# ONE MAJOR PROBLEM: Fire spreads mostly from right to left. Not sure why.
-
 class ForestFire:
     def __init__(self,gui_manager,window_size):
         (window_width,window_height) = window_size
         self.gui_manager = gui_manager
         self.window_size = window_size
-        self.grid_size = (self.grid_width,self.grid_height) = (150,150)
+        self.grid_size = (self.grid_width,self.grid_height) = (180,180)
         self.max_array_length = self.grid_width*self.grid_height
         self.sites = np.array([])
         self.draw_call = False
@@ -25,10 +23,6 @@ class ForestFire:
         # Note: a tree that is on fire is counted as a fire rather than a
         # tree (i.e. it appears in firegrid_array but not treegrid_array)
         self.treegrid_array = np.zeros([self.grid_height,self.grid_width])
-        # firegrid will be a 1d array containing the nonzero indices of 
-        # firegrid_array. treegrid is the same thing but for trees; it's 
-        # created within the GenRandomStart function
-        self.firegrid = np.array([]) 
         
         # Slider for initial tree coverage fraction
         self.initial_slider = pygame_gui.elements.UIHorizontalSlider(
@@ -66,14 +60,15 @@ class ForestFire:
                                           index//self.grid_width),(0,100,0))
             for index in self.firegrid:
                 self.draw_surface.set_at((index%self.grid_height,
-                                          index//self.grid_width),(255,40,7))          
+                                          index//self.grid_width),(255,40,7))
             self.draw_call = False
         window_surf.blit(pygame.transform.scale(self.draw_surface, 
                                                 (600, 600)), (10, 60))
-            
+         
         # Generate initial tree distribution 
     def GenRandomStart(self):
-        # Define treegrid
+        # Define 1d array treegrid which contains the randomly-generated 
+        # indices/positions of trees. This will be used to draw trees
         self.treegrid = np.where(np.random.rand(self.max_array_length) < \
                                  self.initial_slider.current_value)[0]
         # Use treegrid to produce treegrid_array
@@ -81,11 +76,14 @@ class ForestFire:
             self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
             # Outer edges of treegrid_array set to be empty - this simplifies 
             # fire spread code (see Burning)
-            self.treegrid_array[0,:] = self.treegrid_array[:,0] = \
-                self.treegrid_array[self.grid_height-1,:] = \
-                    self.treegrid_array[:,self.grid_width-1] = 0
+        self.treegrid_array[0,:] = self.treegrid_array[:,0] = \
+            self.treegrid_array[self.grid_height-1,:] = \
+                self.treegrid_array[:,self.grid_width-1] = 0
+        # Define firegrid, similar to treegrid. It will be filled 
+        # with the indices/positions of fires by the Burning function. Defined
+        # here so that it resets on slider movement
+        self.firegrid = np.array([])
         self.draw_call = True
-        self.Draw(window_surface)
        
        # Grow trees, set fires and allow them to spread
     def Burning(self): 
@@ -110,31 +108,33 @@ class ForestFire:
                         self.firegrid_array[dy,dx] = 1
                 # Fire spread
                 if self.firegrid_array[dy,dx] == 1:
-                    # Up, down, left, right neighbours of burning tree
+                    # Up, down, left, right neighbours of burning tree. New 
+                    # fires are set to -1 so that they are ignored by further
+                    # loop iterations
                     if self.treegrid_array[dy+1,dx] == 1: 
-                        self.firegrid_array[dy+1,dx] = 1
+                        self.firegrid_array[dy+1,dx] = -1
                         self.treegrid_array[dy+1,dx] = 0
                     if self.treegrid_array[dy-1,dx] == 1:
-                        self.firegrid_array[dy-1,dx] = 1
+                        self.firegrid_array[dy-1,dx] = -1
                         self.treegrid_array[dy-1,dx] = 0
                     if self.treegrid_array[dy,dx+1] == 1:
-                        self.firegrid_array[dy,dx+1] = 1
+                        self.firegrid_array[dy,dx+1] = -1
                         self.treegrid_array[dy,dx+1] = 0
                     if self.treegrid_array[dy,dx-1] == 1:
-                        self.firegrid_array[dy,dx-1] = 1
+                        self.firegrid_array[dy,dx-1] = -1
                         self.treegrid_array[dy,dx-1] = 0
                     # Diagonal neighbours of burning tree
                     if self.treegrid_array[dy+1,dx+1] == 1:
-                        self.firegrid_array[dy+1,dx+1] = 1
+                        self.firegrid_array[dy+1,dx+1] = -1
                         self.treegrid_array[dy+1,dx+1] = 0
                     if self.treegrid_array[dy+1,dx-1] == 1:
-                        self.firegrid_array[dy+1,dx-1] = 1
+                        self.firegrid_array[dy+1,dx-1] = -1
                         self.treegrid_array[dy+1,dx-1] = 0
                     if self.treegrid_array[dy-1,dx+1] == 1:
-                        self.firegrid_array[dy-1,dx+1] = 1
+                        self.firegrid_array[dy-1,dx+1] = -1
                         self.treegrid_array[dy-1,dx+1] = 0
                     if self.treegrid_array[dy-1,dx-1] == 1:
-                        self.firegrid_array[dy-1,dx-1] = 1
+                        self.firegrid_array[dy-1,dx-1] = -1
                         self.treegrid_array[dy-1,dx-1] = 0
                     # Original burning tree burns itself out
                     self.firegrid_array[dy,dx] = 0
@@ -148,6 +148,8 @@ class ForestFire:
         # Take absolute value of elements in treegrid_array so that the 
         # newly-grown trees have element +1 rather than -1
         self.treegrid_array = np.absolute(self.treegrid_array)
+        # Do the same for firegrid_array to deal with new fires
+        self.firegrid_array = np.absolute(self.firegrid_array)
         # Produce 1d treegrid and firegrid from treegrid_array and 
         # firegrid_array
         self.treegrid = np.ravel_multi_index(np.nonzero(self.treegrid_array),
@@ -155,7 +157,7 @@ class ForestFire:
         self.firegrid = np.ravel_multi_index(np.nonzero(self.firegrid_array),
                                              (self.grid_height,self.grid_width))
         self.draw_call = True
-        pygame.time.wait(50)
+        #pygame.time.wait(30)
 
 # Complicated gui stuff that I don't completely understand (mostly Adam's work)
 pygame.init()
@@ -198,20 +200,19 @@ while is_running:
                     button_play.set_text("Play")
                     perc_manager.GenRandomStart()
                 if event.ui_element == perc_manager.p_grow_slider:
-                    GSVal = format(perc_manager.p_grow_slider.current_value,'.2f')
+                    GSVal = format(perc_manager.p_grow_slider.current_value,'.3f')
                     perc_manager.grow_slider_label.set_text(f'Growth probability = {GSVal}')
                     is_playing = False
                     button_play.set_text("Play")
                     perc_manager.GenRandomStart()
                 if event.ui_element == perc_manager.p_fire_slider:
-                    FSVal = format(perc_manager.p_fire_slider.current_value,'.2f')
+                    FSVal = format(perc_manager.p_fire_slider.current_value,'.3f')
                     perc_manager.fire_slider_label.set_text(f'Spontaneous fire probability = {FSVal}')
                     is_playing = False
                     button_play.set_text("Play")
                     perc_manager.GenRandomStart()
     if is_playing:
         perc_manager.Burning()
-        perc_manager.Draw(window_surface)
     gui_manager.process_events(event)
 
     time_timer += time_delta
