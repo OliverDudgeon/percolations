@@ -11,7 +11,10 @@ class ForestFire:
         self.max_array_length = self.grid_width*self.grid_height
         self.sites = np.array([])
         self.draw_call = False
+        self.draw_subsequent_call = False
         self.firegrid = np.array([])
+        self.treegrid_array = np.zeros([self.grid_height,self.grid_width])
+        
         
         self.initial_slider = pygame_gui.elements.UIHorizontalSlider(
             pygame.Rect((10, 670), (600, 20)),0.25,(0.0, 1.0),gui_manager,)
@@ -36,41 +39,59 @@ class ForestFire:
         
     def Draw(self, window_surf):
         if self.draw_call:
-            self.draw_surface.fill((255,255,255))
+            self.draw_surface.fill((44,20,1))
             for index in self.treegrid:
-                self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,0,0))
-                # self.trees_array = pygame.surfarray.array2d(self.draw_surface)
-                # self.trees_array = np.divide(trees_array,np.amax(trees_array))
-                # trees = 0, empty = 1
-            for index in self.firegrid:
-                self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,0,1))
-            global testvar
-            testvar = self.firegrid
+                self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
+                global testvar
+                testvar = self.treegrid_array # seems rotated wrt image?
+                self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,100,0))
+            # for index in self.firegrid:
+            #     self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,0,1))
             
             self.draw_call = False
         window_surf.blit(pygame.transform.scale(self.draw_surface, (600, 600)), (10, 60))
+        
+    def Draw_subsequent(self, window_surf):
+        if self.draw_subsequent_call:
+            for index in self.treegrid:
+                # self.treegrid_array[index%self.grid_height,index//self.grid_width] = 1
+                # global testvar
+                # testvar = self.treegrid_array # seems rotated wrt image?
+                self.draw_surface.set_at((index%self.grid_width,index//self.grid_width),(0,100,0))
+            self.draw_subsequent_call = False
+                
+            
         
     def GenRandomStart(self):
         self.treegrid = np.where(np.random.rand(self.max_array_length) < self.initial_slider.current_value)[0]
         # self.grid[0,:] = self.grid[:,0] = self.grid[self.grid_height,:] = self.grid[:,self.grid_width] = 0
         self.draw_call = True
-        
-    def Burning(self):
-        neighbourhood = ((-1,-1), (-1,0), (-1,1), (0,-1), (0, 1), (1,-1), (1,0), (1,1))
-        EMPTY, TREE, FIRE = 0, 1, 2
-        p = self.p_grow_slider.current_value
+       
+       
+    def Burning(self): # WHY IS THERE ALWAYS AN INITIAL GROWTH PHASE?
         f = self.p_fire_slider.current_value
-        for dx in range(0,np.size(self.treegrid)):
-            if np.random.random() < f:
-                np.append(self.firegrid,self.treegrid[dx])
-                treegrid2 = self.treegrid[self.treegrid != self.treegrid[dx]]
+        p = self.p_grow_slider.current_value
+        for dx in range(0,self.grid_width):
+            for dy in range(0,self.grid_height):
+                if self.treegrid_array[dy,dx] == 0 and np.random.random() < p:
+                    self.treegrid_array[dy,dx] = 1
+                elif self.treegrid_array[dy,dx] == 1 and np.random.random() < f:
+                    self.treegrid_array[dy,dx] = 0 # And then firegrid comes in
+        self.treegrid = np.ravel_multi_index(np.nonzero(self.treegrid_array),(self.grid_height,self.grid_width))
+        self.draw_subsequent_call = True
+        self.Draw_subsequent(window_surface)
+        
+        # for dx in range(0,np.size(self.treegrid)):
+        #     if np.random.random() < f:
+        #         np.append(self.firegrid,self.treegrid[dx])
+        #         treegrid2 = self.treegrid[self.treegrid != self.treegrid[dx]]
                 
-        self.treegrid = treegrid2
-        self.daw_call = True
-        global test_firegrid
-        test_firegrid = self.firegrid
-        global test_treegrid
-        test_treegrid = self.treegrid
+        # self.treegrid = treegrid2
+        # self.daw_call = True
+        # global test_firegrid
+        # test_firegrid = self.firegrid
+        # global test_treegrid
+        # test_treegrid = self.treegrid
 
                 
         # for dx in range(0,self.max_array_length):
