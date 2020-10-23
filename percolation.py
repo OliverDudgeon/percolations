@@ -15,14 +15,14 @@ class BasePercolation:
     """Base class for a percolation simulation"""
 
     def __init__(
-        self, *, name: str, grid_size: int, gui_man: pygame_gui.UIManager
-    ) -> None:
+        self, *, name: str, grid_size: int) -> None:
         """
         name: the name of the simulation in the dropdown
         grid_size: the number of cells on a row/column (the lattice is square)
         gui_man: pygame gui manager to handle user events
         """
         self.name = name
+        self.draw_call = False
         self.grid_size = (self.grid_width, self.grid_height) = (
             grid_size,
             grid_size,
@@ -30,27 +30,36 @@ class BasePercolation:
 
         self.grid = np.zeros(
             self.grid_width * self.grid_height
-        )  # Grid values, 1 = active, 0 = deaded
+        , np.int)  # Grid values, 1 = active, 0 = deaded
 
-    def draw(self):
+    def draw(self, surf: pygame.Surface):
         pass
 
-    def process_events(self):
+    def process_events(self, e: pygame.event):
         pass
 
-    def update(self):
+    def update(self, delta: float):
+        pass
+
+    def enable(self, gui_manager):
         pass
 
 
 class Percolation(BasePercolation):
     """Class to handle percolation things."""
 
-    def __init__(self, gui_man):
-        super().__init__(name="Site Percolation", grid_size=100, gui_man=gui_man)
+    def __init__(self):
+        super().__init__(name="Site Percolation", grid_size=500)
 
         self.cluster = np.zeros_like(self.grid)  # Init cluster values
         self.draw_call = False  # Used to optimize draw calls
         # Add UI elements for this percolation
+        self.draw_surface = pygame.Surface(
+            self.grid_size
+        )  # Create surface to draw onto, for optimisation
+        self.font = pygame.font.SysFont(None, 25)  # Init font for drawing
+
+    def enable(self, gui_man):
         self.p_slider = pygame_gui.elements.UIHorizontalSlider(
             pygame.Rect((10, 670), (600, 20)),
             0.25,
@@ -66,11 +75,7 @@ class Percolation(BasePercolation):
         self.button_graph = pygame_gui.elements.UIButton(
             pygame.Rect(620, 180, 90, 50), "Plot", gui_man
         )
-        self.draw_surface = pygame.Surface(
-            self.grid_size
-        )  # Create surface to draw onto, for optimisation
-        self.font = pygame.font.SysFont(None, 25)  # Init font for drawing
-        self.step()  # Fill grid when initialising
+        self.step()
 
     def draw(self, window_surf):
         if self.draw_call:  # Only redraw grid if it has changed
@@ -214,23 +219,159 @@ class Percolation(BasePercolation):
                 ]
             )
         )
+        n_anyl1 = N * (
+            sum(
+                [
+                    coeffs[i]
+                    * (ps ** (i + 1))
+                    * (1 - ps) ** (i + 2 + 2 * round((i + 1) ** 0.5))
+                    for i in range(20)
+                ]
+            )
+        )
         plt.plot(ps, n_anyl, c="r")
+        plt.plot(ps, n_anyl1, c="g")
         plt.xlabel("Site Probability")
         plt.ylabel("Cluster Size")
         plt.show()
 
 
+class ForestFire(BasePercolation):
+    """Class to handle forest fire percolation."""
+
+    def __init__(self):
+        super().__init__(name="Fire Percolation", grid_size = 180)
+        self.timer = 0
+        self.is_playing = False
+        self.draw_surface = pygame.Surface(self.grid_size)
+        self.font = pygame.font.SysFont(None, 25)
+        
+    def enable(self, gui_manager):
+        # Text entry box for initial tree coverage fraction
+        self.initial_textentry = pygame_gui.elements.UITextEntryLine(
+            pygame.Rect((350,670),(100,20)),gui_manager)
+        self.initial_textentry.allowed_characters = ['0','1','2','3','4','5','6','7','8','9','.']
+        self.initial_textentry.set_text('0.2')
+        self.initial_textentry_label = pygame_gui.elements.UILabel(
+           pygame.Rect((10,670),(300,20)), 'Initial tree coverage fraction: ',
+           gui_manager)
+        
+        # Text entry box for probability of tree growth
+        self.p_grow_textentry = pygame_gui.elements.UITextEntryLine(
+            pygame.Rect((350,710),(100,20)),gui_manager)
+        self.initial_textentry.allowed_characters = ['0','1','2','3','4','5','6','7','8','9','.']
+        self.p_grow_textentry.set_text('0.01')
+        self.p_grow_textentry_label = pygame_gui.elements.UILabel(
+           pygame.Rect((10,710),(300,20)), 'Growth probability: ',
+           gui_manager)
+        
+        # Text entry box for probability of spontaneous tree fire
+        self.p_fire_textentry = pygame_gui.elements.UITextEntryLine(
+            pygame.Rect((350,750),(100,20)),gui_manager)
+        self.initial_textentry.allowed_characters = ['0','1','2','3','4','5','6','7','8','9','.']
+        self.p_fire_textentry.set_text('0.0001')
+        self.p_fire_textentry_label = pygame_gui.elements.UILabel(
+           pygame.Rect((10,750),(300,20)), 'Spontaneous fire probability: ',
+           gui_manager)
+        
+        self.button_play = pygame_gui.elements.UIButton(pygame.Rect(620,120,90,50),"Play",gui_manager)
+        self.GenRandomStart()
+        
+    def draw(self, window_surf): # Draws trees/fires using treegrid and firegrid
+        if self.draw_call:
+            self.draw_surface.fill((44,20,1))
+            for index in range(self.grid.size):
+                if self.grid[index] == 1: self.draw_surface.set_at((index%self.grid_width, index//self.grid_width),(0,100,0))
+                elif self.grid[index] == 2: self.draw_surface.set_at((index%self.grid_width, index//self.grid_width),(255,40,7))
+
+            self.draw_call = False
+        window_surf.blit(pygame.transform.scale(self.draw_surface, 
+                                                (600, 600)), (10, 60))
+                                            
+    def update(self,delta):
+        self.timer += delta
+        if self.timer > 0.1:
+            self.timer -= 0.1
+            if self.is_playing: self.step()
+    
+    def process_events(self, e):
+        if e.type == pygame.USEREVENT:
+            if e.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                if e.ui_element == self.button_play:
+                    self.is_playing = not self.is_playing
+                    if self.is_playing: self.button_play.set_text("Pause")
+                    else: self.button_play.set_text("Play")
+            elif e.user_type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
+                self.is_playing = False
+                self.button_play.set_text("Play")
+                ci = self.initial_textentry.get_text().count('.')
+                cf = self.p_fire_textentry.get_text().count('.')
+                cg = self.p_grow_textentry.get_text().count('.')
+                if (ci + cg + cf) == 3: 
+                    self.GenRandomStart()
+         
+    def GenRandomStart(self): # Generate initial tree distribution 
+        # Resets array
+        self.grid = np.zeros_like(self.grid)
+        #  Places random trees randomly in array
+        self.grid = (np.random.rand(self.grid.size) < float(self.initial_textentry.get_text())).astype(np.int)
+        
+        # Outer edges of treegrid_array set to be empty - this simplifies 
+            # fire spread code (see Burning)
+        self.grid[0:self.grid_width] = 0
+        self.grid[self.grid.size-self.grid_width:] = 0
+        self.grid[0::self.grid_width] = 0
+        self.grid[self.grid_width-1::self.grid_width] = 0
+        self.draw_call = True
+       
+    def step(self): # Grow trees, set fires and allow them to spread
+        # Look through every point in grid
+        for index in range(self.grid.size-self.grid_width-1):
+            # Spontaneous growth
+            if self.grid[index] == 0 and np.random.random() < float(self.p_grow_textentry.get_text()):
+                # Grown tree is +1, -1 is used so it doens't get checked later on
+                self.grid[index] = -1
+            # Spontaneous fire
+            elif self.grid[index] == 1 and np.random.random() < float(self.p_fire_textentry.get_text()):
+                # Fire is +2, -2 is used so it doens't get checked later on
+                self.grid[index] = -2
+            # Fire spread
+            elif self.grid[index] == 2:
+                # Burns all surrounding tiles, sets them to -2 so that they're ignored
+                self.grid[index-1] = -2 if self.grid[index-1] else self.grid[index-1]
+                self.grid[index+1] = -2 if self.grid[index+1] else self.grid[index+1]
+                self.grid[index-self.grid_width] = -2 if self.grid[index-self.grid_width] else self.grid[index-self.grid_width]
+                self.grid[index+self.grid_width] = -2 if self.grid[index+self.grid_width] else self.grid[index+self.grid_width]
+                self.grid[index-self.grid_width-1] = -2 if self.grid[index-self.grid_width-1] else self.grid[index-self.grid_width-1]
+                self.grid[index-self.grid_width+1] = -2 if self.grid[index-self.grid_width+1] else self.grid[index-self.grid_width+1]
+                self.grid[index+self.grid_width-1] = -2 if self.grid[index+self.grid_width-1] else self.grid[index+self.grid_width-1]
+                self.grid[index+self.grid_width+1] = -2 if self.grid[index+self.grid_width+1] else self.grid[index+self.grid_width+1]
+                
+                # Original burning tree burns itself out
+                self.grid[index] = 0
+
+        # Flip ignored sites and clear edges to stop overflow error
+        self.grid = np.absolute(self.grid)
+        
+        self.grid[0:self.grid_width] = 0
+        self.grid[self.grid.size-self.grid_width:] = 0
+        self.grid[0::self.grid_width] = 0
+        self.grid[self.grid_width-1::self.grid_width] = 0
+
+        self.draw_call = True
+
 if __name__ == "__main__":
     # Create pygame window and gui manager
     pygame.init()
     pygame.display.set_caption("Percolation Simulation")
-    window_size = (window_width, window_height) = (720, 720)
+    window_size = (window_width, window_height) = (720, 850)
     window_surface = pygame.display.set_mode(window_size)
 
     gui_manager = pygame_gui.UIManager(window_size)  # Initialize the GUI Manager
 
     percolation_list = []  # List containing all the percolators that we make
-    percolation_list.append(Percolation(gui_manager))
+    percolation_list.append(Percolation())
+    percolation_list.append(ForestFire())
 
     perc_selector = (
         pygame_gui.elements.UIDropDownMenu(  # Drop down menu to select percolator
@@ -240,34 +381,41 @@ if __name__ == "__main__":
             gui_manager,
         )
     )
+
     current_perc = (perc_selector.options_list).index(
         perc_selector.selected_option
     )  # Hold index of current percolator
-
+    percolation_list[current_perc].enable(gui_manager)
     # Time keeping variables + misc.
     is_running = True
-    is_playing = False
     time_start = 0
     time_end = 0.01
     time_delta = 0.01
-
-    time_timer = 0.0
-
+    
     while is_running:  # Main loop for GUI
         # Calculates delta time
         time_end = pygame.time.get_ticks()
         time_delta = (time_end - time_start) / 1000.0
         time_start = time_end
         for event in pygame.event.get():  # Main event loop for pygame
-            if event.type == pygame.QUIT:  # Handle QUIT event
-                is_running = False
+            if event.type == pygame.QUIT: is_running = False # Handle QUIT event
             if event.type == pygame.USEREVENT:
                 if (
                     event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED
                 ):  # Changes the current percolator if drop down menu is changed
+                    gui_manager.clear_and_reset()
                     current_perc = (perc_selector.options_list).index(
                         perc_selector.selected_option
                     )
+                    perc_selector = (
+                    pygame_gui.elements.UIDropDownMenu(  # Drop down menu to select percolator
+                        [p.name for p in percolation_list],
+                        percolation_list[current_perc].name,
+                        pygame.Rect(10, 10, 600, 30),
+                        gui_manager,
+                    )
+                    )
+                    percolation_list[current_perc].enable(gui_manager)
             percolation_list[current_perc].process_events(event)
             gui_manager.process_events(event)  # Update the events for gui
 

@@ -17,6 +17,6 @@
     "python.linting.pylintArgs": [
         "--extension-pkg-whitelist=pygame"
     ],
-    "python.pythonPath": "/home/ollie/anaconda3/envs/physics/bin/python",
+    "python.pythonPath": "C:\\Users\\adam\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
     "python.formatting.provider": "black"
 }
