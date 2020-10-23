@@ -7,6 +7,7 @@
         "kopelman",
         "nexts",
         "perc",
+        "pygame",
         "rect",
         "running",
         "square",
@@ -16,5 +17,6 @@
     "python.linting.pylintArgs": [
         "--extension-pkg-whitelist=pygame"
     ],
-    "python.pythonPath": "C:\\Users\\adam\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
+    "python.pythonPath": "/home/ollie/anaconda3/envs/physics/bin/python",
+    "python.formatting.provider": "black"
 }
