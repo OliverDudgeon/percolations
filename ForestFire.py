@@ -84,6 +84,14 @@ class ForestFire:
         # here so that it resets on slider movement
         self.firegrid = np.array([])
         self.draw_call = True
+        
+        # Reset variables (called when sliders moved)
+    def Reset_model(self,window_surf):
+        self.draw_surface.fill((40,20,1))
+        window_surf.blit(pygame.transform.scale(self.draw_surface, 
+                                                (600, 600)), (10, 60))
+        self.treegrid_array = np.zeros([self.grid_height,self.grid_width])
+        self.firegrid_array = np.zeros([self.grid_height,self.grid_width])
        
        # Grow trees, set fires and allow them to spread
     def Burning(self): 
@@ -157,7 +165,6 @@ class ForestFire:
         self.firegrid = np.ravel_multi_index(np.nonzero(self.firegrid_array),
                                              (self.grid_height,self.grid_width))
         self.draw_call = True
-        #pygame.time.wait(30)
 
 # Complicated gui stuff that I don't completely understand (mostly Adam's work)
 pygame.init()
@@ -198,18 +205,21 @@ while is_running:
                     perc_manager.initial_slider_label.set_text(f'Initial tree coverage fraction = {ISVal}')
                     is_playing = False
                     button_play.set_text("Play")
+                    perc_manager.Reset_model(window_surface)
                     perc_manager.GenRandomStart()
                 if event.ui_element == perc_manager.p_grow_slider:
                     GSVal = format(perc_manager.p_grow_slider.current_value,'.3f')
                     perc_manager.grow_slider_label.set_text(f'Growth probability = {GSVal}')
                     is_playing = False
                     button_play.set_text("Play")
+                    perc_manager.Reset_model(window_surface)
                     perc_manager.GenRandomStart()
                 if event.ui_element == perc_manager.p_fire_slider:
                     FSVal = format(perc_manager.p_fire_slider.current_value,'.3f')
                     perc_manager.fire_slider_label.set_text(f'Spontaneous fire probability = {FSVal}')
                     is_playing = False
                     button_play.set_text("Play")
+                    perc_manager.Reset_model(window_surface)
                     perc_manager.GenRandomStart()
     if is_playing:
         perc_manager.Burning()
