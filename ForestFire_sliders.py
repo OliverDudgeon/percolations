@@ -9,13 +9,12 @@ import pygame_gui
 # so just left it alone....
 
 class ForestFire:
-    def __init__(self,gui_manager,window_size):
-        (window_width,window_height) = window_size
+    def __init__(self,gui_manager):
         self.gui_manager = gui_manager
         self.window_size = window_size
         self.grid_size = (self.grid_width,self.grid_height) = (180,180)
         self.max_array_length = self.grid_width*self.grid_height
-        self.sites = np.array([])
+        self.sites = np.zeros(self.grid_width*self.grid_height)
         self.draw_call = False
         # firegrid_array will have elements 1 where fire, 0 where no fire
         self.firegrid_array = np.zeros([self.grid_height,self.grid_width])
@@ -175,7 +174,7 @@ gui_manager = pygame_gui.UIManager(window_size)
 
 button_play = pygame_gui.elements.UIButton(pygame.Rect(620,120,90,50),"Play",gui_manager)
 
-perc_manager = ForestFire(gui_manager, window_size)
+perc_manager = ForestFire(gui_manager)
 perc_manager.GenRandomStart()
 
 is_running = True

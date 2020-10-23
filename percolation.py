@@ -87,10 +87,10 @@ class Percolation:  # Class to handle percolation things
 
         for i in range(self.grid.size):
             if self.grid[i]:  # Loops through all the active sites
-                top = (
+                top = int(
                     0 if i % self.grid_width == 0 else self.cluster[i - 1]
                 )  # Cluster number of left site
-                left = (
+                left = int(
                     0
                     if i // self.grid_width == 0
                     else self.cluster[i - self.grid_width]
