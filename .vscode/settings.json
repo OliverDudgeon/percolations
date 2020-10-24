@@ -1,5 +1,9 @@
 {
     "cSpell.words": [
+        "anyl",
+        "astype",
+        "blit",
+        "coeffs",
         "hoshen",
         "hoshen kopelman",
         "is",
@@ -7,12 +11,15 @@
         "kopelman",
         "nexts",
         "perc",
+        "polyominoes",
         "pygame",
         "rect",
         "running",
         "square",
         "square perc step",
-        "step"
+        "step",
+        "xlabel",
+        "ylabel"
     ],
     "python.linting.pylintArgs": [
         "--extension-pkg-whitelist=pygame"

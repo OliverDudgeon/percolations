@@ -1,3 +1,8 @@
+"""Simulation of a 2D square site lattice percolation"""
+
+__author__ = "Oliver Dudgeon, Adam Shaw, Joseph Parker"
+__license__ = "MIT"
+
 import numpy as np
 import pygame
 import pygame_gui
@@ -20,21 +25,26 @@ class SitePercolation(BasePercolation):
         )  # Create surface to draw onto, for optimisation
         self.font = pygame.font.SysFont(None, 25)  # Init font for drawing
 
-    def enable(self, gui_man):
+        self.p_slider = None
+        self.button_step = None
+        self.button_path = None
+        self.button_graph = None
+
+    def enable(self, gui_manager: pygame_gui.UIManager):
         self.p_slider = pygame_gui.elements.UIHorizontalSlider(
             pygame.Rect((10, 670), (600, 20)),
             0.25,
             (0.0, 1.0),
-            gui_man,
+            gui_manager,
         )
         self.button_step = pygame_gui.elements.UIButton(
-            pygame.Rect(620, 60, 90, 50), "Step", gui_man
+            pygame.Rect(620, 60, 90, 50), "Step", gui_manager
         )
         self.button_path = pygame_gui.elements.UIButton(
-            pygame.Rect(620, 120, 90, 50), "Cluster", gui_man
+            pygame.Rect(620, 120, 90, 50), "Cluster", gui_manager
         )
         self.button_graph = pygame_gui.elements.UIButton(
-            pygame.Rect(620, 180, 90, 50), "Plot", gui_man
+            pygame.Rect(620, 180, 90, 50), "Plot", gui_manager
         )
         self.step()
 
@@ -71,17 +81,19 @@ class SitePercolation(BasePercolation):
                 elif e.ui_element == self.button_graph:
                     self.simulate()
 
-    def update(self, delta):
+    def update(self, delta) -> None:
         return
 
-    def step(self):  # Do one step of the simulation
+    def step(self):
+        """Do one step of the simulation"""
         self.cluster = np.zeros_like(self.grid, np.int)  # Reset cluster values
         self.grid = (
             np.random.rand(self.grid.size) < self.p_slider.current_value
         )  # Repopulate sites
         self.draw_call = True  # Call a redraw
 
-    def hoshen_kopelman(self):
+    def hoshen_kopelman(self) -> int:
+        """Implementation of the Hoshen-Kopelman clustering algorithm"""
         self.cluster = self.grid[:]  # Array of sites and what cluster they're in
         links = [
             0
@@ -131,6 +143,7 @@ class SitePercolation(BasePercolation):
         return len(label_dict) - 1  # Return the number of clusters (size of dictionary)
 
     def simulate(self):
+        """Generate the graph of cluster size against site probability"""
         ps = np.linspace(0.0, 1.0, 1000)
         cs = np.zeros_like(ps)
         for i in range(ps.size):  # Loop through many values of p

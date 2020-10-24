@@ -1,3 +1,8 @@
+"""Simulation of the forest fire percolation model"""
+
+__author__ = "Oliver Dudgeon, Adam Shaw, Joseph Parker"
+__license__ = "MIT"
+
 import numpy as np
 import pygame
 import pygame_gui
@@ -14,6 +19,14 @@ class ForestFire(BasePercolation):
         self.is_playing = False
         self.draw_surface = pygame.Surface(self.grid_size)
         self.font = pygame.font.SysFont(None, 25)
+
+        self.initial_textentry = None
+        self.initial_textentry_label = None
+        self.p_grow_textentry = None
+        self.p_grow_textentry_label = None
+        self.p_fire_textentry = None
+        self.p_fire_textentry_label = None
+        self.button_play = None
 
     def enable(self, gui_manager):
         # Text entry box for initial tree coverage fraction
@@ -89,9 +102,10 @@ class ForestFire(BasePercolation):
         self.button_play = pygame_gui.elements.UIButton(
             pygame.Rect(620, 120, 90, 50), "Play", gui_manager
         )
-        self.GenRandomStart()
+        self.generate_random_start()
 
-    def draw(self, window_surf):  # Draws trees/fires using treegrid and firegrid
+    def draw(self, window_surf: pygame.Surface):
+        """Draws trees/fires using treegrid and firegrid"""
         if self.draw_call:
             self.draw_surface.fill((44, 20, 1))
             for index in range(self.grid.size):
@@ -133,9 +147,10 @@ class ForestFire(BasePercolation):
                 cf = self.p_fire_textentry.get_text().count(".")
                 cg = self.p_grow_textentry.get_text().count(".")
                 if (ci + cg + cf) == 3:
-                    self.GenRandomStart()
+                    self.generate_random_start()
 
-    def GenRandomStart(self):  # Generate initial tree distribution
+    def generate_random_start(self):
+        """Generate initial tree distribution"""
         # Resets array
         self.grid = np.zeros_like(self.grid)
         #  Places random trees randomly in array
@@ -151,20 +166,21 @@ class ForestFire(BasePercolation):
         self.grid[self.grid_width - 1 :: self.grid_width] = 0
         self.draw_call = True
 
-    def step(self):  # Grow trees, set fires and allow them to spread
+    def step(self):
+        """Grow trees, set fires and allow them to spread"""
         # Look through every point in grid
         for index in range(self.grid.size - self.grid_width - 1):
             # Spontaneous growth
             if self.grid[index] == 0 and np.random.random() < float(
                 self.p_grow_textentry.get_text()
             ):
-                # Grown tree is +1, -1 is used so it doens't get checked later on
+                # Grown tree is +1, -1 is used so it doesn't get checked later on
                 self.grid[index] = -1
             # Spontaneous fire
             elif self.grid[index] == 1 and np.random.random() < float(
                 self.p_fire_textentry.get_text()
             ):
-                # Fire is +2, -2 is used so it doens't get checked later on
+                # Fire is +2, -2 is used so it doesn't get checked later on
                 self.grid[index] = -2
             # Fire spread
             elif self.grid[index] == 2:
