@@ -72,7 +72,7 @@ if __name__ == "__main__":
                         gui_manager,
                     )
                     current_perc.enable(gui_manager)
-            current_perc.process_events(event)
+                current_perc.process_events(event)
             gui_manager.process_events(event)  # Update the events for gui
 
         # Update GUI with delta time
