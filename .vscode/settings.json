@@ -22,8 +22,9 @@
         "ylabel"
     ],
     "python.linting.pylintArgs": [
-        "--extension-pkg-whitelist=pygame"
+        "--extension-pkg-whitelist=pygame",
+        "--extension-pkg-whitelist=numpy"
     ],
-    "python.pythonPath": "/home/ollie/anaconda3/envs/physics/bin/python",
+    "python.pythonPath": "~/anaconda3/envs/physics/bin/python",
     "python.formatting.provider": "black"
 }

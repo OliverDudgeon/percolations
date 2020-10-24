@@ -69,16 +69,16 @@ class SitePercolation(BasePercolation):
         )
         window_surf.blit(img, (300 - img.get_rect().width // 2, 690))
 
-    def process_events(self, e):
-        if e.type == pygame.USEREVENT:
+    def process_events(self, event: pygame.event.Event):
+        if event.type == pygame.USEREVENT:
             if (
-                e.user_type == pygame_gui.UI_BUTTON_PRESSED
+                event.user_type == pygame_gui.UI_BUTTON_PRESSED
             ):  # Handle pygame_gui button events
-                if e.ui_element == self.button_step:
+                if event.ui_element == self.button_step:
                     self.step()
-                elif e.ui_element == self.button_path:
+                elif event.ui_element == self.button_path:
                     self.hoshen_kopelman()
-                elif e.ui_element == self.button_graph:
+                elif event.ui_element == self.button_graph:
                     self.simulate()
 
     def update(self, delta) -> None:

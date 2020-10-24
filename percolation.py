@@ -7,7 +7,9 @@ __license__ = "MIT"
 
 import pygame
 import pygame_gui
+from typing import List
 
+from base_percolation import BasePercolation
 from site_percolation import SitePercolation
 from forest_fire import ForestFire
 
@@ -21,9 +23,10 @@ if __name__ == "__main__":
 
     gui_manager = pygame_gui.UIManager(window_size)  # Initialize the GUI Manager
 
-    percolation_list = []  # List containing all the percolators that we make
-    percolation_list.append(SitePercolation())
-    percolation_list.append(ForestFire())
+    percolation_list: List[BasePercolation] = [
+        SitePercolation(),
+        ForestFire(),
+    ]  # List containing all the percolators that we make
 
     perc_selector = (
         pygame_gui.elements.UIDropDownMenu(  # Drop down menu to select percolator

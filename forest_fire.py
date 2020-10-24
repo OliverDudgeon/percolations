@@ -131,16 +131,16 @@ class ForestFire(BasePercolation):
             if self.is_playing:
                 self.step()
 
-    def process_events(self, e):
-        if e.type == pygame.USEREVENT:
-            if e.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                if e.ui_element == self.button_play:
+    def process_events(self, event: pygame.event.Event):
+        if event.type == pygame.USEREVENT:
+            if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.ui_element == self.button_play:
                     self.is_playing = not self.is_playing
                     if self.is_playing:
                         self.button_play.set_text("Pause")
                     else:
                         self.button_play.set_text("Play")
-            elif e.user_type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
+            elif event.user_type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
                 self.is_playing = False
                 self.button_play.set_text("Play")
                 ci = self.initial_textentry.get_text().count(".")

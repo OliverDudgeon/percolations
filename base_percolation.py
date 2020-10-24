@@ -31,7 +31,7 @@ class BasePercolation:
     def draw(self, window_surf: pygame.Surface):
         pass
 
-    def process_events(self, e: pygame.event):
+    def process_events(self, event: pygame.event.Event):
         pass
 
     def update(self, delta: float):
