@@ -13,13 +13,10 @@ class BasePercolation:
         """
         self.name = name
         self.draw_call = False
-        self.grid_size = (self.grid_width, self.grid_height) = (
-            grid_size,
-            grid_size,
-        )
+        self.grid_size = grid_size
 
         self.grid = np.zeros(
-            self.grid_width * self.grid_height, np.int
+            self.grid_size**2, np.int
         )  # Grid values, 1 = active, 0 = deaded
 
     def draw(self, surf: pygame.Surface):

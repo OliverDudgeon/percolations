@@ -18,5 +18,6 @@
         "--extension-pkg-whitelist=pygame"
     ],
     "python.pythonPath": "/home/ollie/anaconda3/envs/physics/bin/python",
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "black",
+    "python.linting.enabled": true
 }

@@ -12,7 +12,7 @@ class ForestFire(BasePercolation):
         super().__init__(name="Fire Percolation", grid_size=180)
         self.timer = 0
         self.is_playing = False
-        self.draw_surface = pygame.Surface(self.grid_size)
+        self.draw_surface = pygame.Surface((self.grid_size,self.grid_size))
         self.font = pygame.font.SysFont(None, 25)
 
     def enable(self, gui_manager):
@@ -20,7 +20,7 @@ class ForestFire(BasePercolation):
         self.initial_textentry = pygame_gui.elements.UITextEntryLine(
             pygame.Rect((350, 670), (100, 20)), gui_manager
         )
-        self.initial_textentry.allowed_characters = [
+        allowed_characters = [
             "0",
             "1",
             "2",
@@ -33,6 +33,7 @@ class ForestFire(BasePercolation):
             "9",
             ".",
         ]
+        self.initial_textentry.allowed_characters = allowed_characters
         self.initial_textentry.set_text("0.2")
         self.initial_textentry_label = pygame_gui.elements.UILabel(
             pygame.Rect((10, 670), (300, 20)),
@@ -44,19 +45,7 @@ class ForestFire(BasePercolation):
         self.p_grow_textentry = pygame_gui.elements.UITextEntryLine(
             pygame.Rect((350, 710), (100, 20)), gui_manager
         )
-        self.initial_textentry.allowed_characters = [
-            "0",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            ".",
-        ]
+        self.initial_textentry.allowed_characters = allowed_characters
         self.p_grow_textentry.set_text("0.01")
         self.p_grow_textentry_label = pygame_gui.elements.UILabel(
             pygame.Rect((10, 710), (300, 20)), "Growth probability: ", gui_manager
@@ -66,19 +55,7 @@ class ForestFire(BasePercolation):
         self.p_fire_textentry = pygame_gui.elements.UITextEntryLine(
             pygame.Rect((350, 750), (100, 20)), gui_manager
         )
-        self.initial_textentry.allowed_characters = [
-            "0",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            ".",
-        ]
+        self.initial_textentry.allowed_characters = allowed_characters
         self.p_fire_textentry.set_text("0.0001")
         self.p_fire_textentry_label = pygame_gui.elements.UILabel(
             pygame.Rect((10, 750), (300, 20)),
@@ -97,11 +74,11 @@ class ForestFire(BasePercolation):
             for index in range(self.grid.size):
                 if self.grid[index] == 1:
                     self.draw_surface.set_at(
-                        (index % self.grid_width, index // self.grid_width), (0, 100, 0)
+                        (index % self.grid_size, index // self.grid_size), (0, 100, 0)
                     )
                 elif self.grid[index] == 2:
                     self.draw_surface.set_at(
-                        (index % self.grid_width, index // self.grid_width),
+                        (index % self.grid_size, index // self.grid_size),
                         (255, 40, 7),
                     )
 
@@ -145,15 +122,15 @@ class ForestFire(BasePercolation):
 
         # Outer edges of treegrid_array set to be empty - this simplifies
         # fire spread code (see Burning)
-        self.grid[0 : self.grid_width] = 0
-        self.grid[self.grid.size - self.grid_width :] = 0
-        self.grid[0 :: self.grid_width] = 0
-        self.grid[self.grid_width - 1 :: self.grid_width] = 0
+        self.grid[0 : self.grid_size] = 0
+        self.grid[self.grid.size - self.grid_size :] = 0
+        self.grid[0 :: self.grid_size] = 0
+        self.grid[self.grid_size - 1 :: self.grid_size] = 0
         self.draw_call = True
 
     def step(self):  # Grow trees, set fires and allow them to spread
         # Look through every point in grid
-        for index in range(self.grid.size - self.grid_width - 1):
+        for index in range(self.grid.size - self.grid_size - 1):
             # Spontaneous growth
             if self.grid[index] == 0 and np.random.random() < float(
                 self.p_grow_textentry.get_text()
@@ -175,35 +152,35 @@ class ForestFire(BasePercolation):
                 self.grid[index + 1] = (
                     -2 if self.grid[index + 1] else self.grid[index + 1]
                 )
-                self.grid[index - self.grid_width] = (
+                self.grid[index - self.grid_size] = (
                     -2
-                    if self.grid[index - self.grid_width]
-                    else self.grid[index - self.grid_width]
+                    if self.grid[index - self.grid_size]
+                    else self.grid[index - self.grid_size]
                 )
-                self.grid[index + self.grid_width] = (
+                self.grid[index + self.grid_size] = (
                     -2
-                    if self.grid[index + self.grid_width]
-                    else self.grid[index + self.grid_width]
+                    if self.grid[index + self.grid_size]
+                    else self.grid[index + self.grid_size]
                 )
-                self.grid[index - self.grid_width - 1] = (
+                self.grid[index - self.grid_size - 1] = (
                     -2
-                    if self.grid[index - self.grid_width - 1]
-                    else self.grid[index - self.grid_width - 1]
+                    if self.grid[index - self.grid_size - 1]
+                    else self.grid[index - self.grid_size - 1]
                 )
-                self.grid[index - self.grid_width + 1] = (
+                self.grid[index - self.grid_size + 1] = (
                     -2
-                    if self.grid[index - self.grid_width + 1]
-                    else self.grid[index - self.grid_width + 1]
+                    if self.grid[index - self.grid_size + 1]
+                    else self.grid[index - self.grid_size + 1]
                 )
-                self.grid[index + self.grid_width - 1] = (
+                self.grid[index + self.grid_size - 1] = (
                     -2
-                    if self.grid[index + self.grid_width - 1]
-                    else self.grid[index + self.grid_width - 1]
+                    if self.grid[index + self.grid_size - 1]
+                    else self.grid[index + self.grid_size - 1]
                 )
-                self.grid[index + self.grid_width + 1] = (
+                self.grid[index + self.grid_size + 1] = (
                     -2
-                    if self.grid[index + self.grid_width + 1]
-                    else self.grid[index + self.grid_width + 1]
+                    if self.grid[index + self.grid_size + 1]
+                    else self.grid[index + self.grid_size + 1]
                 )
 
                 # Original burning tree burns itself out
@@ -212,9 +189,9 @@ class ForestFire(BasePercolation):
         # Flip ignored sites and clear edges to stop overflow error
         self.grid = np.absolute(self.grid)
 
-        self.grid[0 : self.grid_width] = 0
-        self.grid[self.grid.size - self.grid_width :] = 0
-        self.grid[0 :: self.grid_width] = 0
-        self.grid[self.grid_width - 1 :: self.grid_width] = 0
+        self.grid[0 : self.grid_size] = 0
+        self.grid[self.grid.size - self.grid_size :] = 0
+        self.grid[0 :: self.grid_size] = 0
+        self.grid[self.grid_size - 1 :: self.grid_size] = 0
 
         self.draw_call = True
