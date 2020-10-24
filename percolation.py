@@ -37,15 +37,16 @@ if __name__ == "__main__":
         )
     )
 
-    current_perc = (perc_selector.options_list).index(
+    current_perc_index = (perc_selector.options_list).index(
         perc_selector.selected_option
     )  # Hold index of current percolator
-    percolation_list[current_perc].enable(gui_manager)
+    current_perc = percolation_list[current_perc_index]
+    current_perc.enable(gui_manager)
     # Time keeping variables + misc.
-    is_running = True
-    time_start = 0
-    time_end = 0.01
-    time_delta = 0.01
+    is_running: bool = True
+    time_start: float = 0.0
+    time_end: float = 0.01
+    time_delta: float = 0.01
 
     while is_running:  # Main loop for GUI
         # Calculates delta time
@@ -54,31 +55,32 @@ if __name__ == "__main__":
         time_start = time_end
         for event in pygame.event.get():  # Main event loop for pygame
             if event.type == pygame.QUIT:
-                is_running = False  # Handle QUIT event
+                is_running: bool = False  # Handle QUIT event
             if event.type == pygame.USEREVENT:
                 if (
                     event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED
                 ):  # Changes the current percolator if drop down menu is changed
                     gui_manager.clear_and_reset()
-                    current_perc = (perc_selector.options_list).index(
+                    current_perc_index = (perc_selector.options_list).index(
                         perc_selector.selected_option
                     )
+                    current_perc = percolation_list[current_perc_index]
                     perc_selector = pygame_gui.elements.UIDropDownMenu(  # Drop down menu to select percolator
                         [p.name for p in percolation_list],
-                        percolation_list[current_perc].name,
+                        current_perc.name,
                         pygame.Rect(10, 10, 600, 30),
                         gui_manager,
                     )
-                    percolation_list[current_perc].enable(gui_manager)
-            percolation_list[current_perc].process_events(event)
+                    current_perc.enable(gui_manager)
+            current_perc.process_events(event)
             gui_manager.process_events(event)  # Update the events for gui
 
         # Update GUI with delta time
         gui_manager.update(time_delta)
-        percolation_list[current_perc].update(time_delta)
+        current_perc.update(time_delta)
 
         # Draw all the GUI
         window_surface.fill((44, 47, 51))
-        percolation_list[current_perc].draw(window_surface)
+        current_perc.draw(window_surface)
         gui_manager.draw_ui(window_surface)
         pygame.display.update()
