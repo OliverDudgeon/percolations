@@ -1,50 +1,77 @@
+"""Simulation of a 2D square site lattice percolation"""
+
+__author__ = "Oliver Dudgeon, Adam Shaw, Joseph Parker"
+__license__ = "MIT"
+
 import numpy as np
 import pygame
 import pygame_gui
+from pygame_gui.elements import UIButton, UIHorizontalSlider
 import matplotlib.pyplot as plt
 import time
 
 from base_percolation import BasePercolation
+from coefficients import COEFFS
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BTN_WH = (90, 50)
 
 
 class SitePercolation(BasePercolation):
     """Class to handle percolation things."""
 
     def __init__(self):
-        super().__init__(name="Site Percolation", grid_size=1000)
+        super().__init__(name="Site Percolation", grid_size=100)
+
         self.cluster = np.zeros_like(self.grid)  # Init cluster values
         self.draw_call = False  # Used to optimize draw calls
         self.draw_cluster = False
         # Add UI elements for this percolation
-        self.draw_surface = pygame.Surface(
-            (self.grid_size,self.grid_size)
-        )  # Create surface to draw onto, for optimisation
+
+        # Create surface to draw onto, for optimisation
+        self.draw_surface = pygame.Surface((self.grid_size,self.grid_size))
         self.font = pygame.font.SysFont(None, 25)  # Init font for drawing
 
-    def enable(self, gui_man):
-        self.p_slider = pygame_gui.elements.UIHorizontalSlider(
+        self.p_slider = None
+        self.button_step = None
+        self.button_path = None
+        self.button_graph = None
+
+    def step(self):
+        """Do one step of the simulation"""
+        self.cluster = np.zeros_like(self.grid, dtype=np.int)  # Reset cluster values
+
+        # Repopulate sites
+        self.grid = np.random.rand(self.grid.size) < self.p_slider.current_value
+        self.draw_call = True  # Call a redraw
+
+    def enable(self, gui_manager: pygame_gui.UIManager):
+        """Create the UI elements"""
+        self.p_slider = UIHorizontalSlider(
             pygame.Rect((10, 670), (600, 20)),
             0.25,
             (0.0, 1.0),
-            gui_man,
+            gui_manager,
         )
-        self.button_step = pygame_gui.elements.UIButton(
-            pygame.Rect(620, 60, 90, 50), "Step", gui_man
+        self.button_step = UIButton(pygame.Rect(620, 60, *BTN_WH), "Step", gui_manager)
+        self.button_path = UIButton(
+            pygame.Rect(620, 120, *BTN_WH), "Cluster", gui_manager
         )
-        self.button_path = pygame_gui.elements.UIButton(
-            pygame.Rect(620, 120, 90, 50), "Cluster", gui_man
+        self.button_graph = UIButton(
+            pygame.Rect(620, 180, *BTN_WH), "Plot", gui_manager
         )
-        self.button_graph = pygame_gui.elements.UIButton(
-            pygame.Rect(620, 180, 90, 50), "Plot", gui_man
-        )
-        self.step()
 
-    def draw(self, window_surf):
+        self.step()  # Initial draw
+
+    def draw(self, window_surf) -> None:
+        surface = self.draw_surface
         if self.draw_call:  # Only redraw grid if it has changed
-            self.draw_surface.fill((255, 255, 255))  # Clear old grid
-            for i in range(
-                self.grid.size
-            ):  #  Loop through all active sites and fill pixel black
+            # Clear old grid by making every cell white
+            surface.fill(WHITE)
+
+            #  Loop through all active sites and fill pixel black
+            for i in range(self.grid.size):
                 if self.grid[i] == 1:
                     self.draw_surface.set_at(
                         (i % self.grid_size, i // self.grid_size), (0, 0, 0)
@@ -54,7 +81,9 @@ class SitePercolation(BasePercolation):
         window_surf.blit(
             pygame.transform.scale(self.draw_surface, (600, 600)), (10, 60)
         )
-
+        # Copy surface to main window
+        window_surf.blit(pygame.transform.scale(surface, (600, 600)), (10, 60))
+        
         if self.draw_clusters:
             s = 600//self.grid_size
             for i in range(self.grid.size):
@@ -62,27 +91,28 @@ class SitePercolation(BasePercolation):
                 img = self.font.render(str(self.cluster[i]),True,(255,0,0),None)
                 c = (10 + (i%self.grid_size)*s,60 +(i//self.grid_size)*s)
                 window_surf.blit(pygame.transform.smoothscale(img, (600//self.grid_size,600//self.grid_size)), c)
+                # Transform index of 1D array to 2D array
+                pos = (i % self.grid_size, i // self.grid_size)
+                surface.set_at(pos, BLACK)
 
         # Draw the value of the probability slider
-        img = self.font.render(
-            f"p: {self.p_slider.current_value:.3f}", True, (255, 255, 255), None
-        )
+        text = f"p: {self.p_slider.current_value:.3f}"
+        img = self.font.render(text, True, WHITE, None)
         window_surf.blit(img, (300 - img.get_rect().width // 2, 690))
 
-    def process_events(self, e):
-        if e.type == pygame.USEREVENT:
-            if (
-                e.user_type == pygame_gui.UI_BUTTON_PRESSED
-            ):  # Handle pygame_gui button events
-                if e.ui_element == self.button_step:
+    def process_events(self, event: pygame.event.Event):
+        if event.type == pygame.USEREVENT:
+            # Handle pygame_gui button events
+            if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.ui_element == self.button_step:
                     self.step()
-                elif e.ui_element == self.button_path:
+                elif event.ui_element == self.button_path:
                     self.hoshen_kopelman()
                     self.draw_clusters = True
-                elif e.ui_element == self.button_graph:
+                elif event.ui_element == self.button_graph:
                     self.simulate()
 
-    def update(self, delta):
+    def update(self, delta) -> None:
         return
 
     def step(self):  # Do one step of the simulation
@@ -152,7 +182,6 @@ class SitePercolation(BasePercolation):
         for l in range(100):
             self.grid = (np.random.rand(self.grid.size) < 0.60).astype(np.int)
             top += self.hoshen_kopelman()
-        print("half")
         for l in range(100):
             self.grid = (np.random.rand(self.grid.size) < 0.59).astype(np.int)
             bot += self.hoshen_kopelman()

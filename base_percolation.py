@@ -1,5 +1,11 @@
+"""The shared logic between multiple simulation classes which inherit from this"""
+
+__author__ = "Oliver Dudgeon, Adam Shaw, Joseph Parker"
+__license__ = "MIT"
+
 import numpy as np
 import pygame
+import pygame_gui
 
 
 class BasePercolation:
@@ -19,14 +25,14 @@ class BasePercolation:
             self.grid_size**2, np.int
         )  # Grid values, 1 = active, 0 = deaded
 
-    def draw(self, surf: pygame.Surface):
+    def draw(self, window_surf: pygame.Surface):
         pass
 
-    def process_events(self, e: pygame.event):
+    def process_events(self, event: pygame.event.Event):
         pass
 
     def update(self, delta: float):
         pass
 
-    def enable(self, gui_manager):
+    def enable(self, gui_manager: pygame_gui.UIManager):
         pass
