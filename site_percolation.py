@@ -7,15 +7,16 @@ import numpy as np
 import pygame
 import pygame_gui
 from pygame_gui.elements import UIButton, UIHorizontalSlider
-import matplotlib.pyplot as plt
 import time
 
 from base_percolation import BasePercolation
-from coefficients import COEFFS
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+RED = (255, 0, 0)
 BTN_WH = (90, 50)
+
+GRID_CONTAINER_SIZE = 600
 
 
 class SitePercolation(BasePercolation):
@@ -26,11 +27,10 @@ class SitePercolation(BasePercolation):
 
         self.cluster = np.zeros_like(self.grid)  # Init cluster values
         self.draw_call = False  # Used to optimize draw calls
-        self.draw_cluster = False
-        # Add UI elements for this percolation
+        self.draw_cluster = False # Used to draw clusters
 
         # Create surface to draw onto, for optimisation
-        self.draw_surface = pygame.Surface((self.grid_size,self.grid_size))
+        self.draw_surface = pygame.Surface((self.grid_size, self.grid_size))
         self.font = pygame.font.SysFont(None, 25)  # Init font for drawing
 
         self.p_slider = None
@@ -73,25 +73,37 @@ class SitePercolation(BasePercolation):
 
             #  Loop through all active sites and fill pixel black
             for i in range(self.grid.size):
+                row = i % self.grid_size
+                column = i // self.grid_size
                 if self.grid[i] == 1:
-                    self.draw_surface.set_at(
-                        (i % self.grid_size, i // self.grid_size), (0, 0, 0)
-                    )
+                    self.draw_surface.set_at((row, column), BLACK)
             self.draw_call = False  # No need to redraw now
+
         # Copy surface to main window
         window_surf.blit(
-            pygame.transform.scale(self.draw_surface, (600, 600)), (10, 60)
+            pygame.transform.scale(
+                self.draw_surface, (GRID_CONTAINER_SIZE, GRID_CONTAINER_SIZE)
+            ),
+            (10, 60),
         )
         # Copy surface to main window
-        window_surf.blit(pygame.transform.scale(surface, (600, 600)), (10, 60))
-        
+        window_surf.blit(
+            pygame.transform.scale(surface, (GRID_CONTAINER_SIZE, GRID_CONTAINER_SIZE)),
+            (10, 60),
+        )
+
         if self.draw_clusters:
-            s = 600//self.grid_size
+            site_size = GRID_CONTAINER_SIZE // self.grid_size
             for i in range(self.grid.size):
-                if not self.cluster[i]: continue
-                img = self.font.render(str(self.cluster[i]),True,(255,0,0),None)
-                c = (10 + (i%self.grid_size)*s,60 +(i//self.grid_size)*s)
-                window_surf.blit(pygame.transform.smoothscale(img, (600//self.grid_size,600//self.grid_size)), c)
+                row = i % self.grid_size
+                column = i // self.grid_size
+                if not self.cluster[i]:
+                    continue
+                img = self.font.render(str(self.cluster[i]), True, RED, None)
+                cluster = (10 + row * site_size, 60 + column * site_size)
+                scaled = pygame.transform.smoothscale(img, (site_size, site_size))
+                window_surf.blit(scaled, cluster)
+
                 # Transform index of 1D array to 2D array
                 pos = (i % self.grid_size, i // self.grid_size)
                 surface.set_at(pos, BLACK)
@@ -102,16 +114,15 @@ class SitePercolation(BasePercolation):
         window_surf.blit(img, (300 - img.get_rect().width // 2, 690))
 
     def process_events(self, event: pygame.event.Event):
-        if event.type == pygame.USEREVENT:
-            # Handle pygame_gui button events
-            if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                if event.ui_element == self.button_step:
-                    self.step()
-                elif event.ui_element == self.button_path:
-                    self.hoshen_kopelman()
-                    self.draw_clusters = True
-                elif event.ui_element == self.button_graph:
-                    self.simulate()
+        # Handle pygame_gui button events
+        if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+            if event.ui_element == self.button_step:
+                self.step()
+            elif event.ui_element == self.button_path:
+                self.hoshen_kopelman()
+                self.draw_clusters = True
+            elif event.ui_element == self.button_graph:
+                self.simulate()
 
     def update(self, delta) -> None:
         return
@@ -121,46 +132,48 @@ class SitePercolation(BasePercolation):
         Implementation of the Hoshen-Kopelman clustering algorithm
         returns the number of clusters found
         """
-        self.cluster = self.grid.astype(np.int)  # Array of sites and what cluster they're in
-        labels = np.zeros(self.grid.size//2,dtype = np.int)  # Links clusters together that we're not previously found to be together
+        # Array of sites and what cluster they're in
+        self.cluster = self.grid.astype(np.int)
+        # Links clusters together that we're not previously found to be together
+        labels = np.array([0 for l in range(self.grid.size // 2)])
 
-        def find(x): # Loops through labels indexing them correctly
-            y = x
-            while (labels[y] != y).any():
-                y = labels[y]
-            
-            while (labels[x] != x).any():
-                z = labels[x]
-                labels[x] = y
-                x = z
-            return y
-        
-        def union(x, y): # Links to cluster together
-            fy = find(y)
-            labels[find(x)] = fy
-            return fy
+        def find(x_pos):  # Loops through labels indexing them correctly
+            y_pos = x_pos
+            while (labels[y_pos] != y_pos).any():
+                y_pos = labels[y_pos]
+
+            while (labels[x_pos] != x_pos).any():
+                label = labels[x_pos]
+                labels[x_pos] = y_pos
+                x_pos = label
+            return y_pos
+
+        def union(x_pos, y_pos):  # Links to cluster together
+            found_y = find(y_pos)
+            labels[find(x_pos)] = found_y
+            return found_y
 
         for i in range(self.grid.size):
-            if self.grid[i]:  # Loops through all the active sites
-                top = (
-                    0 if i % self.grid_size == 0 else self.cluster[i - 1]
-                )  # Cluster number of left site
-                left = (
-                    0
-                    if i // self.grid_size == 0
-                    else self.cluster[i - self.grid_size]
-                )  # Cluster number of top site
+            row = i % self.grid_size
+            column = i // self.grid_size
 
-                c = int(top > 0) + int(left > 0)  # Counts how many sites are next to it
-                if c == 0:  # If not in cluster, add to new one
+            if self.grid[i]:  # Loops through all the active sites
+                # Cluster number of left site
+                top = 0 if row == 0 else self.cluster[i - 1]
+                # Cluster number of top site
+                left = 0 if column == 0 else self.cluster[i - self.grid_size]
+
+                # Counts how many sites are next to it
+                cluster = int(top > 0) + int(left > 0)
+                if cluster == 0:  # If not in cluster, add to new one
                     labels[0] += 1
                     labels[labels[0]] = labels[0]
                     self.cluster[i] = labels[0]
-                elif (
-                    c == 1
-                ):  # Next to one cluster so set to the cluster number (one of left or top will be zero)
+                elif cluster == 1:
+                    # Next to one cluster so set to the cluster number
+                    # (one of left or top will be zero)
                     self.cluster[i] = max(top, left)
-                elif c == 2:  # Next to two clusters
+                elif cluster == 2:  # Next to two clusters
                     self.cluster[i] = union(top, left)
         labels[0] = 0
         # Finds all the unique labels for clusters on edges of grid
@@ -171,15 +184,23 @@ class SitePercolation(BasePercolation):
 
 
         # Find cluster numbers on top and bottom
-        top_bot = np.intersect1d(self.cluster[:self.grid_size], self.cluster[self.grid.size - self.grid_size :])
+        top_bot = np.intersect1d(
+            self.cluster[: self.grid_size],
+            self.cluster[self.grid.size - self.grid_size :],
+        )
         # Find cluster numbers on left and right
-        left_right = np.intersect1d(self.cluster[self.grid_size - 1 :: self.grid_size], self.cluster[0 :: self.grid_size])
+        left_right = np.intersect1d(
+            self.cluster[self.grid_size - 1 :: self.grid_size],
+            self.cluster[0 :: self.grid_size],
+        )
         # Remove empty sites
         top_bot = top_bot[top_bot != 0]
         left_right = left_right[left_right != 0]
         # Returns 1 if a cluster belongs on opposite edges
-        if top_bot.size > 0: return 1
-        if left_right.size > 0: return 1
+        if top_bot.size > 0:
+            return 1
+        if left_right.size > 0:
+            return 1
         return 0
 
     def simulate(self):
