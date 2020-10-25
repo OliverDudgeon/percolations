@@ -12,6 +12,7 @@ from base_percolation import BasePercolation
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+RED = (255, 0, 0)
 BTN_WH = (90, 50)
 
 GRID_CONTAINER_SIZE = 600
@@ -67,7 +68,7 @@ class SitePercolation(BasePercolation):
                 row = i % self.grid_size
                 column = i // self.grid_size
                 if self.grid[i] == 1:
-                    self.draw_surface.set_at((row, column), (0, 0, 0))
+                    self.draw_surface.set_at((row, column), BLACK)
             self.draw_call = False  # No need to redraw now
 
         # Copy surface to main window
@@ -90,12 +91,10 @@ class SitePercolation(BasePercolation):
                 column = i // self.grid_size
                 if not self.cluster[i]:
                     continue
-                img = self.font.render(str(self.cluster[i]), True, (255, 0, 0), None)
+                img = self.font.render(str(self.cluster[i]), True, RED, None)
                 cluster = (10 + row * site_size, 60 + column * site_size)
-                window_surf.blit(
-                    pygame.transform.smoothscale(img, (site_size, site_size)),
-                    cluster,
-                )
+                scaled = pygame.transform.smoothscale(img, (site_size, site_size))
+                window_surf.blit(scaled, cluster)
 
                 # Transform index of 1D array to 2D array
                 pos = (i % self.grid_size, i // self.grid_size)
@@ -134,12 +133,10 @@ class SitePercolation(BasePercolation):
         Implementation of the Hoshen-Kopelman clustering algorithm
         returns the number of clusters found
         """
-        self.cluster = self.grid.astype(
-            np.int
-        )  # Array of sites and what cluster they're in
-        labels = np.array(
-            [0 for l in range(self.grid.size // 2)]
-        )  # Links clusters together that we're not previously found to be together
+        # Array of sites and what cluster they're in
+        self.cluster = self.grid.astype(np.int)
+        # Links clusters together that we're not previously found to be together
+        labels = np.array([0 for l in range(self.grid.size // 2)])
 
         def find(x_pos):  # Loops through labels indexing them correctly
             y_pos = x_pos
@@ -160,21 +157,22 @@ class SitePercolation(BasePercolation):
         for i in range(self.grid.size):
             row = i % self.grid_size
             column = i // self.grid_size
+
             if self.grid[i]:  # Loops through all the active sites
                 # Cluster number of left site
                 top = 0 if row == 0 else self.cluster[i - 1]
                 # Cluster number of top site
                 left = 0 if column == 0 else self.cluster[i - self.grid_size]
 
-                cluster = int(top > 0) + int(
-                    left > 0
-                )  # Counts how many sites are next to it
+                # Counts how many sites are next to it
+                cluster = int(top > 0) + int(left > 0)
                 if cluster == 0:  # If not in cluster, add to new one
                     labels[0] += 1
                     labels[labels[0]] = labels[0]
                     self.cluster[i] = labels[0]
                 elif cluster == 1:
-                    # Next to one cluster so set to the cluster number (one of left or top will be zero)
+                    # Next to one cluster so set to the cluster number
+                    # (one of left or top will be zero)
                     self.cluster[i] = max(top, left)
                 elif cluster == 2:  # Next to two clusters
                     self.cluster[i] = union(top, left)
@@ -202,14 +200,13 @@ class SitePercolation(BasePercolation):
         return 0
 
     def simulate(self):
-        """"""
-        # To find critical point WIP
+        """To find critical point WIP"""
         top = 0
         bottom = 0
-        for l in range(100):
+        for _ in range(100):
             self.grid = (np.random.rand(self.grid.size) < 0.60).astype(np.int)
             top += self.hoshen_kopelman()
-        for l in range(100):
+        for _ in range(100):
             self.grid = (np.random.rand(self.grid.size) < 0.59).astype(np.int)
             bottom += self.hoshen_kopelman()
         print((0.59 * bottom + 0.60 * top) / (top + bottom))
