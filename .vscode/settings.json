@@ -27,7 +27,7 @@
         "--extension-pkg-whitelist=pygame",
         "--extension-pkg-whitelist=numpy"
     ],
-    "python.pythonPath": "/home/ollie/anaconda3/envs/physics/bin/python",
+    "python.pythonPath": "C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python38\\python.exe",
     "python.formatting.provider": "black",
     "python.linting.enabled": true
 }

@@ -22,7 +22,7 @@ class SitePercolation(BasePercolation):
     """Class to handle percolation things."""
 
     def __init__(self):
-        super().__init__(name="Site Percolation", grid_size=100)
+        super().__init__(name="Site Percolation", grid_size=2000)
 
         self.cluster = np.zeros_like(self.grid)  # Init cluster values
         self.draw_call = False  # Used to optimize draw calls
@@ -45,6 +45,7 @@ class SitePercolation(BasePercolation):
         # Repopulate sites
         self.grid = np.random.rand(self.grid.size) < self.p_slider.current_value
         self.draw_call = True  # Call a redraw
+        self.draw_clusters = False
 
     def enable(self, gui_manager: pygame_gui.UIManager):
         """Create the UI elements"""
@@ -115,21 +116,13 @@ class SitePercolation(BasePercolation):
     def update(self, delta) -> None:
         return
 
-    def step(self):  # Do one step of the simulation
-        self.cluster = np.zeros_like(self.grid, np.int)  # Reset cluster values
-        self.grid = (
-            np.random.rand(self.grid.size) < self.p_slider.current_value
-        )  # Repopulate sites
-        self.draw_call = True  # Call a redraw
-        self.draw_clusters = False
-
     def hoshen_kopelman(self):
         """
         Implementation of the Hoshen-Kopelman clustering algorithm
         returns the number of clusters found
         """
         self.cluster = self.grid.astype(np.int)  # Array of sites and what cluster they're in
-        labels = np.array([0 for l in range(self.grid.size//2)])  # Links clusters together that we're not previously found to be together
+        labels = np.zeros(self.grid.size//2,dtype = np.int)  # Links clusters together that we're not previously found to be together
 
         def find(x): # Loops through labels indexing them correctly
             y = x
@@ -170,7 +163,12 @@ class SitePercolation(BasePercolation):
                 elif c == 2:  # Next to two clusters
                     self.cluster[i] = union(top, left)
         labels[0] = 0
-        self.cluster = find(self.cluster) # Finds all the unique labels for clusters
+        # Finds all the unique labels for clusters on edges of grid
+        self.cluster[:self.grid_size] = find(self.cluster[:self.grid_size])
+        self.cluster[self.grid.size - self.grid_size :] = find(self.cluster[self.grid.size - self.grid_size :])
+        self.cluster[self.grid_size - 1 :: self.grid_size] = find(self.cluster[self.grid_size - 1 :: self.grid_size])
+        self.cluster[0 :: self.grid_size] = find(self.cluster[0 :: self.grid_size])
+
 
         # Find cluster numbers on top and bottom
         top_bot = np.intersect1d(self.cluster[:self.grid_size], self.cluster[self.grid.size - self.grid_size :])
@@ -186,12 +184,18 @@ class SitePercolation(BasePercolation):
 
     def simulate(self):
         # To find critical point WIP
-        top = 0
-        bot = 0
-        for l in range(100):
-            self.grid = (np.random.rand(self.grid.size) < 0.60).astype(np.int)
-            top += self.hoshen_kopelman()
-        for l in range(100):
-            self.grid = (np.random.rand(self.grid.size) < 0.59).astype(np.int)
-            bot += self.hoshen_kopelman()
-        print((0.59*bot + 0.60*top)/(top+bot))
+        prob_list = np.linspace(0.5,0.6,10)
+        count_list = np.zeros_like(prob_list)
+        for i in range(prob_list.size):
+            print(i)
+            rand_time = 0
+            dist_time = 0
+            for _ in range(20):
+                st = time.time()
+                self.grid = (np.random.rand(self.grid.size) < prob_list[i]).astype(np.int)
+                rand_time += time.time()-st
+                st = time.time()
+                count_list[i] += self.hoshen_kopelman()
+                dist_time += time.time()-st
+            print(rand_time, dist_time)
+        print(np.dot(prob_list,count_list)/(np.sum(count_list)))
