@@ -27,7 +27,7 @@ class SitePercolation(BasePercolation):
 
         self.cluster = np.zeros_like(self.grid)  # Init cluster values
         self.draw_call = False  # Used to optimize draw calls
-        self.draw_cluster = False # Used to draw clusters
+        self.draw_clusters = False # Used to draw clusters
 
         # Create surface to draw onto, for optimisation
         self.draw_surface = pygame.Surface((self.grid_size, self.grid_size))
@@ -43,7 +43,7 @@ class SitePercolation(BasePercolation):
         self.cluster = np.zeros_like(self.grid, dtype=np.int)  # Reset cluster values
 
         # Repopulate sites
-        self.grid = np.random.rand(self.grid.size) < self.p_slider.current_value
+        self.grid = (np.random.rand(self.grid.size) < self.p_slider.current_value).astype(np.int)
         self.draw_call = True  # Call a redraw
         self.draw_clusters = False
 
@@ -211,7 +211,7 @@ class SitePercolation(BasePercolation):
             print(i)
             rand_time = 0
             dist_time = 0
-            for _ in range(20):
+            for _ in range(10):
                 st = time.time()
                 self.grid = (np.random.rand(self.grid.size) < prob_list[i]).astype(np.int)
                 rand_time += time.time()-st
