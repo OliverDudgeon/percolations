@@ -21,9 +21,8 @@ class BasePercolation:
         self.draw_call = False
         self.grid_size = grid_size
 
-        self.grid = np.zeros(
-            self.grid_size**2, np.int
-        )  # Grid values, 1 = active, 0 = deaded
+        # Grid values, 1 = active, 0 = deaded
+        self.grid = np.zeros(self.grid_size ** 2, np.int)  
 
     def draw(self, window_surf: pygame.Surface):
         pass

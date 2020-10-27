@@ -10,6 +10,7 @@ import pygame
 import pygame_gui
 from pygame_gui.elements import UIButton, UIHorizontalSlider
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 from base_percolation import BasePercolation
 
@@ -19,18 +20,17 @@ RED = (255, 0, 0)
 BTN_WH = (90, 50)
 
 GRID_CONTAINER_SIZE = 600
-
+GRID_SIZE = 1000
 
 class SitePercolation(BasePercolation):
     """Class to handle percolation things."""
 
     def __init__(self):
-        super().__init__(name="Site Percolation", grid_size=1000)
+        super().__init__(name="Site Percolation", grid_size=GRID_SIZE)
 
-        self.cluster = np.zeros_like(self.grid)  # Init cluster values
+        self.cluster = np.zeros_like(self.grid, dtype=np.int)  # Init cluster values
         self.draw_call = False  # Used to optimize draw calls
         self.draw_clusters = False # Used to draw clusters
-
         self.labels = np.zeros(self.grid.size//2,dtype = np.int) # Used for labeling clusters
 
         # Create surface to draw onto, for optimisation
@@ -158,17 +158,15 @@ class SitePercolation(BasePercolation):
         self.cluster = self.grid.astype(np.int)
         # Links clusters together that we're not previously found to be together
         self.labels[:] = 0
-
+        
         for i in range(self.grid.size):
             row = i % self.grid_size
             column = i // self.grid_size
-
             if self.grid[i]:  # Loops through all the active sites
                 # Cluster number of left site
                 top = 0 if row == 0 else self.cluster[i - 1]
                 # Cluster number of top site
                 left = 0 if column == 0 else self.cluster[i - self.grid_size]
-
                 # Counts how many sites are next to it
                 cluster = int(top > 0) + int(left > 0)
                 if cluster == 0:  # If not in cluster, add to new one
@@ -181,6 +179,7 @@ class SitePercolation(BasePercolation):
                     self.cluster[i] = max(top, left)
                 elif cluster == 2:  # Next to two clusters
                     self.cluster[i] = self._union(top, left)
+
         self.labels[self.labels[0]] = 0 # This is links emtyp cells to zero, makes them not drawn
         self.labels[0] = 0 # Stops infinite loop in find function
         self.cluster = self._find(self.cluster) # Give each cluster a unique label
@@ -211,19 +210,10 @@ class SitePercolation(BasePercolation):
         """To find critical point WIP"""
         prob_list = np.linspace(0.5,0.6,10)
         count_list = np.zeros_like(prob_list)
+        pool = Pool(4)
         for i in range(prob_list.size):
-            print(i)
-            rand_time = 0
-            dist_time = 0
-            for _ in range(10):
-                st = time.time()
-                self.grid = (np.random.rand(self.grid.size) < prob_list[i]).astype(np.int)
-                rand_time += time.time()-st
-                st = time.time()
-                self.hoshen_kopelman()
-                count_list[i] += self._is_infinite()
-                dist_time += time.time()-st
-            print(rand_time, dist_time)
+            args = [(np.random.rand(self.grid.size) < prob_list[i]).astype(np.int) for _ in range(100)]
+            count_list[i] += sum(pool.map(_hoshen_kopelman,args))
         print(np.dot(prob_list,count_list)/(np.sum(count_list)))
     
     def _sim_cluster_sizes(self):
@@ -236,13 +226,14 @@ class SitePercolation(BasePercolation):
         _, (ax1, ax2) = plt.subplots(2)
         self.grid = (np.random.rand(self.grid.size) < 0).astype(np.int)
         self.hoshen_kopelman()
-        N = 5
+        N = 100
         for i in range(prob_list.size):
             for _ in range(N):
-                self.grid = (np.random.rand(self.grid.size) < prob_list[i]).astype(np.int)
+                self.grid[:] = (np.random.rand(self.grid.size) < prob_list[i]).astype(np.int)
                 self.hoshen_kopelman()
                 counts = self._calc_cluster_counts()
-                cluster_sizes[i] += np.mean(np.sqrt(counts))
+                cluster_count, cluster_numbers = np.unique(counts,return_counts=True)
+                cluster_sizes[i] += np.dot(cluster_count**2,cluster_numbers)
                 sites_in_clusters[i] += np.mean(counts)
             print(i, cluster_sizes[i]/10)
         ax1.plot(prob_list, cluster_sizes/N)
@@ -251,7 +242,7 @@ class SitePercolation(BasePercolation):
 
     def simulate(self):
         """Selector for available simulations"""
-        sim = 1
+        sim = 2
         if sim == 1:
             self._sim_cluster_sizes()
         elif sim == 2:
