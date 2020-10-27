@@ -11,6 +11,7 @@ import pygame_gui
 from pygame_gui.elements import UIButton, UIHorizontalSlider
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
+from scipy.ndimage import measurements
 
 from base_percolation import BasePercolation
 
@@ -20,7 +21,8 @@ RED = (255, 0, 0)
 BTN_WH = (90, 50)
 
 GRID_CONTAINER_SIZE = 600
-GRID_SIZE = 1000
+GRID_SIZE = 10
+
 
 class SitePercolation(BasePercolation):
     """Class to handle percolation things."""
@@ -30,8 +32,10 @@ class SitePercolation(BasePercolation):
 
         self.cluster = np.zeros_like(self.grid, dtype=np.int)  # Init cluster values
         self.draw_call = False  # Used to optimize draw calls
-        self.draw_clusters = False # Used to draw clusters
-        self.labels = np.zeros(self.grid.size//2,dtype = np.int) # Used for labeling clusters
+        self.draw_clusters = False  # Used to draw clusters
+        self.labels = np.zeros(
+            self.grid.size // 2, dtype=np.int
+        )  # Used for labeling clusters
 
         # Create surface to draw onto, for optimisation
         self.draw_surface = pygame.Surface((self.grid_size, self.grid_size))
@@ -47,7 +51,9 @@ class SitePercolation(BasePercolation):
         self.cluster = np.zeros_like(self.grid, dtype=np.int)  # Reset cluster values
 
         # Repopulate sites
-        self.grid = (np.random.rand(self.grid.size) < self.p_slider.current_value).astype(np.int)
+        self.grid = (
+            np.random.rand(self.grid.size) < self.p_slider.current_value
+        ).astype(np.int)
         self.draw_call = True  # Call a redraw
         self.draw_clusters = False
 
@@ -131,12 +137,12 @@ class SitePercolation(BasePercolation):
     def update(self, delta) -> None:
         return
 
-    def _find(self, old_label):  
+    def _find(self, old_label):
         """Loops through labels indexing them correctly"""
         new_label = old_label
         while (self.labels[new_label] != new_label).any():
             new_label = self.labels[new_label]
-        
+
         while (self.labels[old_label] != old_label).any():
             label = self.labels[old_label]
             self.labels[old_label] = new_label
@@ -150,39 +156,43 @@ class SitePercolation(BasePercolation):
         return label
 
     def hoshen_kopelman(self):
-        """
-        Implementation of the Hoshen-Kopelman clustering algorithm
-        returns the number of clusters found
-        """
-        # Array of sites and what cluster they're in
-        self.cluster = self.grid.astype(np.int)
-        # Links clusters together that we're not previously found to be together
-        self.labels[:] = 0
-        
-        for i in range(self.grid.size):
-            row = i % self.grid_size
-            column = i // self.grid_size
-            if self.grid[i]:  # Loops through all the active sites
-                # Cluster number of left site
-                top = 0 if row == 0 else self.cluster[i - 1]
-                # Cluster number of top site
-                left = 0 if column == 0 else self.cluster[i - self.grid_size]
-                # Counts how many sites are next to it
-                cluster = int(top > 0) + int(left > 0)
-                if cluster == 0:  # If not in cluster, add to new one
-                    self.labels[0] += 1
-                    self.labels[int(self.labels[0])] = self.labels[0]
-                    self.cluster[i] = self.labels[0]
-                elif cluster == 1:
-                    # Next to one cluster so set to the cluster number
-                    # (one of left or top will be zero)
-                    self.cluster[i] = max(top, left)
-                elif cluster == 2:  # Next to two clusters
-                    self.cluster[i] = self._union(top, left)
+        self.cluster, _ = measurements.label(
+            self.grid.reshape((self.grid_size, self.grid_size))
+        )
+        self.cluster = self.cluster.reshape(self.grid.size)
+        # """
+        # Implementation of the Hoshen-Kopelman clustering algorithm
+        # returns the number of clusters found
+        # """
+        # # Array of sites and what cluster they're in
+        # self.cluster = self.grid.astype(np.int)
+        # # Links clusters together that we're not previously found to be together
+        # self.labels[:] = 0
 
-        self.labels[self.labels[0]] = 0 # This is links emtyp cells to zero, makes them not drawn
-        self.labels[0] = 0 # Stops infinite loop in find function
-        self.cluster = self._find(self.cluster) # Give each cluster a unique label
+        # for i in range(self.grid.size):
+        #     row = i % self.grid_size
+        #     column = i // self.grid_size
+        #     if self.grid[i]:  # Loops through all the active sites
+        #         # Cluster number of left site
+        #         top = 0 if row == 0 else self.cluster[i - 1]
+        #         # Cluster number of top site
+        #         left = 0 if column == 0 else self.cluster[i - self.grid_size]
+        #         # Counts how many sites are next to it
+        #         cluster = int(top > 0) + int(left > 0)
+        #         if cluster == 0:  # If not in cluster, add to new one
+        #             self.labels[0] += 1
+        #             self.labels[int(self.labels[0])] = self.labels[0]
+        #             self.cluster[i] = self.labels[0]
+        #         elif cluster == 1:
+        #             # Next to one cluster so set to the cluster number
+        #             # (one of left or top will be zero)
+        #             self.cluster[i] = max(top, left)
+        #         elif cluster == 2:  # Next to two clusters
+        #             self.cluster[i] = self._union(top, left)
+
+        # self.labels[self.labels[0]] = 0 # This is links emtyp cells to zero, makes them not drawn
+        # self.labels[0] = 0 # Stops infinite loop in find function
+        # self.cluster = self._find(self.cluster) # Give each cluster a unique label
 
     def _is_infinite(self) -> int:
         """Check if the grid is infinite"""
@@ -200,50 +210,4 @@ class SitePercolation(BasePercolation):
         top_bot = top_bot[top_bot != 0]
         left_right = left_right[left_right != 0]
         # Returns 1 if a cluster belongs on opposite edges, 0 otherwise
-        return int(left_right.size>0 or top_bot.size>0)
-    
-    def _calc_cluster_counts(self):
-        _, counts = np.unique(self.cluster, return_counts=True)
-        return counts
-
-    def _sim_critical_point(self):
-        """To find critical point WIP"""
-        prob_list = np.linspace(0.5,0.6,10)
-        count_list = np.zeros_like(prob_list)
-        pool = Pool(4)
-        for i in range(prob_list.size):
-            args = [(np.random.rand(self.grid.size) < prob_list[i]).astype(np.int) for _ in range(100)]
-            count_list[i] += sum(pool.map(_hoshen_kopelman,args))
-        print(np.dot(prob_list,count_list)/(np.sum(count_list)))
-    
-    def _sim_cluster_sizes(self):
-        """Calc the sizes of clusters for a range of probabilities and plot"""
-        prob_list = np.linspace(0.55, 0.625, 100)
-
-        cluster_sizes = np.zeros_like(prob_list)
-        sites_in_clusters = np.zeros_like(prob_list)
-
-        _, (ax1, ax2) = plt.subplots(2)
-        self.grid = (np.random.rand(self.grid.size) < 0).astype(np.int)
-        self.hoshen_kopelman()
-        N = 100
-        for i in range(prob_list.size):
-            for _ in range(N):
-                self.grid[:] = (np.random.rand(self.grid.size) < prob_list[i]).astype(np.int)
-                self.hoshen_kopelman()
-                counts = self._calc_cluster_counts()
-                cluster_count, cluster_numbers = np.unique(counts,return_counts=True)
-                cluster_sizes[i] += np.dot(cluster_count**2,cluster_numbers)
-                sites_in_clusters[i] += np.mean(counts)
-            print(i, cluster_sizes[i]/10)
-        ax1.plot(prob_list, cluster_sizes/N)
-        ax2.plot(prob_list, sites_in_clusters/N)
-        plt.show()
-
-    def simulate(self):
-        """Selector for available simulations"""
-        sim = 2
-        if sim == 1:
-            self._sim_cluster_sizes()
-        elif sim == 2:
-            self._sim_critical_point()
+        return int(left_right.size > 0 or top_bot.size > 0)
