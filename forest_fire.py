@@ -30,8 +30,8 @@ class ForestFire(BasePercolation):
         self.step_iteration = 0
         self.probabilities = 30
         self.sim_reps = 20
-        self.sim_times = np.zeros((1,self.probabilities))
-        self.full_sim_times = np.zeros((self.sim_reps,self.probabilities))
+        self.sim_times = np.zeros((1, self.probabilities))
+        self.full_sim_times = np.zeros((self.sim_reps, self.probabilities))
         self.draw_surface = pygame.Surface((self.grid_size, self.grid_size))
         self.font = pygame.font.SysFont(None, 25)
 
@@ -79,7 +79,9 @@ class ForestFire(BasePercolation):
         )
 
         self.button_play = UIButton(pygame.Rect(620, 120, 90, 50), "Play", gui_manager)
-        self.button_sim = UIButton(pygame.Rect(620, 180, 90, 50), "Simulate", gui_manager)
+        self.button_sim = UIButton(
+            pygame.Rect(620, 180, 90, 50), "Simulate", gui_manager
+        )
         self.generate_random_start()
 
     def draw(self, window_surf: pygame.Surface):
@@ -129,7 +131,7 @@ class ForestFire(BasePercolation):
             if event.ui_element == self.button_sim:
                 self.is_playing = False
                 self.init_sim()
-                
+
         elif event.user_type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
             self.is_playing = False
             self.button_play.set_text("Play")
@@ -138,28 +140,36 @@ class ForestFire(BasePercolation):
 
     # Initiate criticality simulation
     def init_sim(self):
-        # Repeat algorithm multiple times 
-        for i1 in range(0,self.sim_reps):
+        # Repeat algorithm multiple times
+        for i1 in range(0, self.sim_reps):
             # Perform calculation for multiple tree coverage fractions
-            for i2 in range(1,self.probabilities):
-                self.iterative_tree_frac = i2/self.probabilities
+            for i2 in range(1, self.probabilities):
+                self.iterative_tree_frac = i2 / self.probabilities
                 self.is_simulating = True
                 self.generate_random_start()
                 while self.is_simulating == True:
                     self.sim_step()
             print(self.sim_times)
-            self.full_sim_times[i1,:] = self.sim_times
-            
+            self.full_sim_times[i1, :] = self.sim_times
+
         # Calculate mean simulation times, save data and plot graph
-        sim_times_final = np.mean(self.full_sim_times, axis = 0)
-        savestr = ("data_"+str(self.sim_reps)+"reps_"+str(self.probabilities)+"probs.npy")
-        np.save(savestr,sim_times_final)
+        sim_times_final = np.mean(self.full_sim_times, axis=0)
+        savestr = (
+            "data_"
+            + str(self.sim_reps)
+            + "reps_"
+            + str(self.probabilities)
+            + "probs.npy"
+        )
+        np.save(savestr, sim_times_final)
         print(sim_times_final)
-        x_probs = np.linspace(0,1,np.size(sim_times_final)).reshape((self.probabilities,1))
-        plt.plot(x_probs,np.transpose(sim_times_final),'k*')
+        x_probs = np.linspace(0, 1, np.size(sim_times_final)).reshape(
+            (self.probabilities, 1)
+        )
+        plt.plot(x_probs, np.transpose(sim_times_final), "k*")
         plt.xlabel("Initial tree fraction")
         plt.ylabel("Time until simulation complete")
-    
+
     def reset_outer_edges(self):
         """Resets the outer edges of the grid to zero"""
         self.grid[0 : self.grid_size] = 0
@@ -187,8 +197,8 @@ class ForestFire(BasePercolation):
             # Place trees randomly, with probabiliity from the loop in init_sim
             tree_fraction = self.iterative_tree_frac
             self.grid = (np.random.rand(self.grid.size) < tree_fraction).astype(np.int)
-            # Set 2nd row on fire 
-            self.grid[self.grid_size : 2*self.grid_size-1] = 2
+            # Set 2nd row on fire
+            self.grid[self.grid_size : 2 * self.grid_size - 1] = 2
             self.reset_outer_edges()
 
     def step(self):
@@ -243,9 +253,9 @@ class ForestFire(BasePercolation):
     def sim_step(self):
         # Modified version of step for criticality simulation. No tree growth,
         # no spontaneous fires, and fires only spread via nearest-neighbours
-        # (i.e. no North East, South West etc) so that results can be compared 
+        # (i.e. no North East, South West etc) so that results can be compared
         # with square site percolation
-        key_index = int(self.iterative_tree_frac*self.probabilities)
+        key_index = int(self.iterative_tree_frac * self.probabilities)
         self.test_grid = self.grid
         for i in range(self.grid.size - self.grid_size - 1):
             point = self.grid[i]
@@ -258,21 +268,25 @@ class ForestFire(BasePercolation):
                 self.grid[i + 1] = -2 if east else east
                 self.grid[i + self.grid_size] = -2 if south else south
                 self.grid[i - 1] = -2 if west else west
-                
+
                 self.grid[i] = 0
-                
+
         self.step_iteration += 1
         print(self.step_iteration)
         self.grid = np.absolute(self.grid)
         self.reset_outer_edges()
-        last_line = self.grid[self.grid_size^2-2*self.grid_size : self.grid_size^2-self.grid_size-1]
+        last_line = self.grid[
+            self.grid_size
+            ^ 2 - 2 * self.grid_size : self.grid_size
+            ^ 2 - self.grid_size - 1
+        ]
         # Algorithm complete if fire has spread to last line
         if 2 in last_line:
             self.is_simulating = False
-            self.sim_times[0,key_index] = self.step_iteration
+            self.sim_times[0, key_index] = self.step_iteration
             print("ALL THE WAY")
         # Algorithm complete if grid doesn't change (fire can't reach new trees)
         if np.all(self.test_grid == self.grid):
             self.is_simulating = False
-            self.sim_times[0,key_index] = self.step_iteration
+            self.sim_times[0, key_index] = self.step_iteration
             print("BURNED ITSELF OUT")

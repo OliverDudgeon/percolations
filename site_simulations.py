@@ -5,8 +5,6 @@ from multiprocessing import Pool
 from scipy.ndimage import measurements
 import matplotlib.pyplot as plt
 
-GRID_SIZE = 40000
-
 
 def _is_infinite(grid: np.ndarray):
     size = grid.shape[0]
@@ -50,6 +48,7 @@ def _sim_cluster_numbers():
     prob_list = np.linspace(0.0, 1.0, 500)
     numb_list = np.zeros_like(prob_list)
     for i in range(prob_list.size):
+        print(i)
         grid = (np.random.rand(5000, 5000) < prob_list[i]).astype(np.int)
         _, n = measurements.label(grid)
         numb_list[i] = n
@@ -58,6 +57,47 @@ def _sim_cluster_numbers():
     plt.show()
 
 
+def _label_dot_counts():
+    prob_list = np.linspace(0.0, 1.0, 500)
+    numb_list = np.zeros_like(prob_list)
+    try:
+        numb_list = np.load("./site_data/ldc_data.npy")
+    except FileNotFoundError:
+        for i in range(prob_list.size):
+            print(i)
+            grid = (np.random.rand(5000, 5000) < prob_list[i]).astype(np.int)
+            labels, _ = measurements.label(grid)
+            label, sizes = np.unique(labels, return_counts=True)
+            numb_list[i] = np.dot(label, sizes)
+        np.save("./site_data/ldc_data.npy", numb_list)
+
+    plt.plot(prob_list, numb_list)
+    plt.xlabel("Site Probability")
+    plt.ylabel("Sum of label numbers times cluster size")
+    try:
+        f = open("ldc_fig.svg")
+        f.close()
+    except FileNotFoundError:
+        plt.savefig("./site_data/ldc_fig.svg", format="svg")
+        plt.savefig("./site_data/ldc_fig.pdf", format="pdf")
+    plt.show()
+
+
+def _cluster_size_deviation():
+    prob_list = np.linspace(0.0, 1.0, 500)
+    numb_list = np.zer / os_like(prob_list)
+    for i in range(prob_list.size):
+        print(i)
+        grid = (np.random.rand(5000, 5000) < prob_list[i]).astype(np.int)
+        labels, _ = measurements.label(grid)
+        _, sizes = np.unique(labels, return_counts=True)
+        size, counts = np.unique(sizes, return_counts=True)
+        numb_list[i] = np.dot(size ** 2, counts)
+    plt.plot(prob_list, numb_list)
+    plt.show()
+
+
 if __name__ == "__main__":
     # _sim_critical_point()
-    _sim_cluster_numbers()
+    # _sim_cluster_numbers()
+    _label_dot_counts()
