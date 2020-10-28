@@ -76,7 +76,7 @@
 
 \author{Oliver Dudgeon}
 \author{Adam Shaw}
-\author{Josheph Parker}
+\author{Joseph Parker}
 
 \date{\today}
 
@@ -98,21 +98,36 @@ use the optional argument of the \verb+\item+ command to give the category of ea
 
 \section{Introduction}
 Structure\\
-- Generic description of perc theory\\
+- Generic description of perc theory \cite{stauffer_introduction_2003}\\
 * Site and Bond percolation\\
-* 
 - Areas where it's used\\
-    * Epidemic models (COVID-19)\\
+    * Epidemic models (COVID-19) \cite{mello_epidemics_2020}\\
 - Why investigate further\\
 - Report structure\\
 
 \section{Models}
 Site percolation on a 2D lattice\\
-- hoshen kopelman (HK) clustering algorithm\\
-- Flowchart\\
-\includesvg{assets/hk_algroithm}
+* How it's generated\\
+* What's meant by critical point\\
+- hoshen kopelman (HK) clustering algorithm \cite{hoshen_percolation_1976}\\
+* Description of algorithm and why it's good\\
+* Optimisations and multiprocessing (cluster splitting)\\
+* How we optimised (not as useful method)\\
+- Flowchart \cref{fig:hk_flow}\\
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{assets/hk_algroithm}
+    \caption{Flowchart}
+    \label{fig:hk_flow}
+\end{figure}
 - SciPy algorithm\\
+* The data structure they used\\
+* Their choice of algorithm\\
+* Why it's faster than ours?\\
 - Theory for critical points\\
+* Changes in properties at critical point for site perc\\
+* What these mean for physical systems\\
+* How I found the critical points\\
 
 Forest Fire Model\\
 - Theory for critical points\\
@@ -121,9 +136,18 @@ Forest Fire Model\\
 
 Site\\
 - number of clusters\\
+* Give reasoning for shape of the curve at three values of p\\
+* Link into polyminoes\\
 - polyminoes\\
+* What is a polymino
 - critical probability\\
+* Show results from critical probability 
+* Introduce plots\\
+* Identify critical point on graph\\
+* Calculate critical exponents from graph
 - Weird graph?
+* Understand what's going on physically
+* Describe why this may be of importance
 
 FF\\
 - Gifs
