@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 def _gamma_exponent():
     N = 10000
     pc = 0.59274
-    prob_list = np.linspace(0, 1.0, 100)
+    prob_list = np.linspace(pc - 0.1, pc, 100)
     cluster_mean = np.zeros_like(prob_list)
     try:
         cluster_mean = np.load("./site_data/clmean_data.npy")
@@ -18,13 +18,26 @@ def _gamma_exponent():
         for i in range(prob_list.size):
             print(i)
             grid = np.random.rand(N, N) < prob_list[i]
-            _, s = label(grid)
-            cluster_mean[i] = np.sum(grid) / s
+            labels, _ = label(grid)
+            _, count = np.unique(labels, return_counts=True)
+            size, n_s = np.unique(count, return_counts=True)
+            cluster_mean[i] = np.dot(size ** 2, n_s) / pc
+            # cluster_mean[i] = np.sum(grid) / s
+            # cluster_mean[i] = np.mean(count)
         np.save("./site_data/clmean_data.npy", cluster_mean)
+    prob_list -= pc
+    prob_list = np.abs(prob_list)
+    # cluster_mean = cluster_mean[: prob_list.size]
+    # prob_list = prob_list[: prob_list.size]
+    # plt.plot(prob_list, cluster_mean)
 
-    # prob_list -= pc
-    plt.plot(prob_list, cluster_mean)
-    # plt.plot(np.log(prob_list), np.log(cluster_mean))
+    def func(s, m, c):
+        return m * s + c
+
+    # popt, _ = curve_fit(func, np.log(prob_list), np.log(cluster_mean))
+    # print(-popt[0])
+    # plt.plot(np.log(prob_list), func(np.log(prob_list), *popt))
+    plt.plot(np.log(prob_list), np.log(cluster_mean))
     plt.show()
 
 
@@ -77,7 +90,7 @@ def _beta_exponent():
         return m * x + c
 
     popt, pact = curve_fit(func, np.log(prob_list), np.log(frac_list))
-
+    print(popt[0])
     plt.plot(prob_list, frac_list)
     plt.xlabel(r"|$p - p_{c}$|")
     plt.ylabel(r"P")
