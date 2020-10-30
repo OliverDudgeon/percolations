@@ -72,7 +72,7 @@ class SitePercolation(BasePercolation):
         )
 
         self.sim_select = UIDropDownMenu(
-            ["Fisher Exponent", "Beta Exponent", "Critical Point"],
+            ["Fisher Exponent", "Beta Exponent", "Critical Point", "Cluster Number"],
             "Fisher Exponent",
             pygame.Rect((10, 710, 200, 30)),
             gui_manager,
@@ -144,6 +144,8 @@ class SitePercolation(BasePercolation):
                     self._beta_exponent()
                 elif self.sim_select.selected_option == "Critical Point":
                     self._sim_critical_point()
+                elif self.sim_select.selected_option == "Cluster Number":
+                    self._sim_cluster_number()
 
     def update(self, delta) -> None:
         return
@@ -313,4 +315,46 @@ class SitePercolation(BasePercolation):
             + "$"
         )
         plt.savefig("./site_data/critical_prob.pdf", format="pdf")
+        plt.show()
+
+    def _sim_cluster_number(self):
+        N = 10_000
+        prob_list = np.linspace(0, 1, 100)
+        numb_list = np.zeros_like(prob_list)
+        try:
+            numb_list = np.load("./site_data/cluster_data.npy")
+        except FileNotFoundError:
+            for i in range(prob_list.size):
+                print(i)
+                grid = np.random.rand(N, N) < prob_list[i]
+                label, counts = measurements.label(grid)
+                numb_list[i] = counts
+            np.save("./site_data/cluster_data.npy", numb_list)
+
+        p = prob_list
+        n = p * (1 - p) ** 4  # n = 1 term
+        plt.plot(prob_list, numb_list / (10_000 * 10_000))
+        plt.plot(p, n)
+        n += 2 * p ** 2 * (1 - p) ** 6  # n = 2 term
+        plt.plot(p, n)
+        n += 2 * p ** 3 * (1 - p) ** 8 + 4 * p ** 3 * (1 - p) ** 7
+        plt.plot(p, n)
+        n += (
+            2 * p ** 4 * (1 - p) ** 10
+            + 4 * p ** 4 * (1 - p) ** 9
+            + p ** 4 * (1 - p) ** 8
+        )
+        plt.plot(p, n)
+        plt.legend(
+            [
+                "Data",
+                "Polymioes curve n = 1",
+                "Polymioes curve n = 2",
+                "Polymioes curve n = 3",
+                "Polymioes curve n = 4",
+            ]
+        )
+        plt.xlabel("Site Probability")
+        plt.ylabel("Number of clusters")
+        plt.title("Number of clusters vs probability $n(p)$")
         plt.show()
