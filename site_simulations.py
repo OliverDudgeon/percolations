@@ -3,7 +3,6 @@
 import numpy as np
 from multiprocessing import Pool
 from scipy.ndimage import label
-from skimage import measure
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 

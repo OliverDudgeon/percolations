@@ -11,7 +11,6 @@ import pygame_gui
 from pygame_gui.elements import UIButton, UIHorizontalSlider
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
-from skimage import measure
 from scipy.ndimage import measurements
 
 from base_percolation import BasePercolation
@@ -157,11 +156,8 @@ class SitePercolation(BasePercolation):
         return label
 
     def hoshen_kopelman(self):
-        # self.cluster, _ = measurements.label(
-        #     self.grid.reshape((self.grid_size, self.grid_size))
-        # )
-        self.cluster = measure.label(
-            self.grid.reshape((self.grid_size, self.grid_size)), connectivity=1
+        self.cluster, _ = measurements.label(
+            self.grid.reshape((self.grid_size, self.grid_size))
         )
         self.cluster = self.cluster.reshape(self.grid.size)
         # """
