@@ -11,20 +11,39 @@ pc = 0.59274
 
 def _fisher_exponent():
     N = 40000
-    grid = np.random.rand(N, N) < pc
+    grid = np.random.rand(N, N) < pc + 0.035
     labels, _ = label(grid)
     _, size = np.unique(labels, return_counts=True)
     size, counts = np.unique(size, return_counts=True)
-    size = size[counts > 2 * N]
-    counts = counts[counts > 2 * N] / np.sum(counts)
+    size = size[counts > N // 2]
+    counts = counts[counts > N // 2] / np.sum(counts)
 
     def func(s, m, c):
         return m * s + c
 
-    popt, pcov = curve_fit(func, np.log(size), np.log(counts))
-    print(-popt[0])
+    popt, pact = curve_fit(func, np.log(size), np.log(counts))
+    print(-popt[0], pact[0])
     plt.plot(np.log(size), np.log(counts))
     plt.plot(np.log(size), func(np.log(size), *popt))
+    plt.legend(
+        [
+            "Data plot",
+            r"$\log|n_{s}| \approx"
+            + f" {popt[0]:.3f}"
+            + r"\log|s|"
+            + f"{popt[1]:.2f}$",
+        ]
+    )
+    plt.title(
+        "Log-Log plot of cluster count vs the size of the cluster\n"
+        + r"$\tau = "
+        + f"{-popt[0]:.3f}"
+        + r"\pm"
+        + f"{pact[0][0]:.3e}$"
+    )
+    plt.xlabel(r"$\log|s|$")
+    plt.ylabel(r"$\log|n_{s}|$")
+    plt.savefig("./site_data/tau_graph.pdf", format="pdf")
     plt.show()
 
 
@@ -114,18 +133,27 @@ def _sim_critical_point():
         np.save("./site_data/pl_list.npy", pl_list)
     ns = np.arange(ph_list.size)
     p_c = (ph_list[-1] + pl_list[-1]) / 2.0
+    pc_d = (ph_list[-1] - pl_list[-1]) / 2.0
     plt.scatter(ns, ph_list)
     plt.scatter(ns, pl_list)
     plt.plot(ns, np.ones_like(ns) * p_c)
     plt.legend(["Critical probability", "Upper Probability", "Lower Probability"])
     plt.xlabel("Itteration number")
     plt.ylabel("Probability")
-    plt.title(r"Plot of binary search for critical probability, $p_{c} = 0.5928$")
+    pc_str = f"{p_c:.4f}"
+    pc_d_str = f"{pc_d:.1e}"
+    plt.title(
+        r"Plot of binary search for critical probability, $p_{c} ="
+        + pc_str
+        + r"\pm"
+        + pc_d_str
+        + "$"
+    )
     plt.savefig("./site_data/critical_prob.pdf", format="pdf")
     plt.show()
 
 
 if __name__ == "__main__":
-    _sim_critical_point()
-    # _fisher_exponent()
+    # _sim_critical_point()
+    _fisher_exponent()
     # _beta_exponent()
