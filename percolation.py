@@ -58,7 +58,8 @@ if __name__ == "__main__":
                 is_running: bool = False  # Handle QUIT event
             if event.type == pygame.USEREVENT:
                 if (
-                    event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.ui_element == perc_selector
+                    event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED
+                    and event.ui_element == perc_selector
                 ):  # Changes the current percolator if drop down menu is changed
                     gui_manager.clear_and_reset()
                     current_perc_index = (perc_selector.options_list).index(
@@ -84,4 +85,3 @@ if __name__ == "__main__":
         current_perc.draw(window_surface)
         gui_manager.draw_ui(window_surface)
         pygame.display.update()
-

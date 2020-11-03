@@ -10,6 +10,7 @@ import pygame
 import pygame_gui
 from pygame_gui.elements import UIButton, UIHorizontalSlider, UIDropDownMenu
 import matplotlib.pyplot as plt
+import matplotlib
 from multiprocessing import Pool
 from scipy.ndimage import measurements
 from scipy.optimize import curve_fit
@@ -23,6 +24,7 @@ BTN_WH = (90, 50)
 
 GRID_CONTAINER_SIZE = 600
 GRID_SIZE = 10
+matplotlib.rcParams.update({"font.size": 22})
 
 
 class SitePercolation(BasePercolation):
@@ -175,9 +177,9 @@ class SitePercolation(BasePercolation):
         self.cluster = self.cluster.reshape(self.grid.size)
 
     def _fisher_exponent(self):
-        N = 40000
+        N = 40_000
         pc = 0.59274
-        grid = np.random.rand(N, N) < pc + 0.035
+        grid = np.random.rand(N, N) < pc + 0.0365
         labels, _ = measurements.label(grid)
         _, size = np.unique(labels, return_counts=True)
         size, counts = np.unique(size, return_counts=True)
@@ -189,24 +191,23 @@ class SitePercolation(BasePercolation):
 
         popt, pact = curve_fit(func, np.log(size), np.log(counts))
         print(-popt[0], pact[0])
-        plt.plot(np.log(size), np.log(counts))
-        plt.plot(np.log(size), func(np.log(size), *popt))
-        plt.legend(
-            [
-                "Data plot",
-                r"$\log|n_{s}| \approx"
-                + f" {popt[0]:.3f}"
-                + r"\log|s|"
-                + f"{popt[1]:.2f}$",
-            ]
+        plt.figure(figsize=(10, 5))
+        plt.plot(
+            np.log(size),
+            np.log(counts),
+            "o",
+            label="Data Points",
+            color="black",
         )
-        plt.title(
-            "Log-Log plot of cluster count vs the size of the cluster\n"
-            + r"$\tau = "
-            + f"{-popt[0]:.3f}"
-            + r"\pm"
-            + f"{pact[0][0]:.3e}$"
+        plt.plot(
+            np.log(size),
+            func(np.log(size), *popt),
+            label="Linear Fit",
+            linestyle="dashed",
+            color="black",
+            alpha=0.3,
         )
+        plt.legend()
         plt.xlabel(r"$\log|s|$")
         plt.ylabel(r"$\log|n_{s}|$")
         plt.savefig("./site_data/tau_graph.pdf", format="pdf")
@@ -241,27 +242,31 @@ class SitePercolation(BasePercolation):
         def func(x, m, c):
             return m * x + c
 
+        fig = plt.figure(num=None, figsize=(10, 10))
+
         popt, pact = curve_fit(func, np.log(prob_list), np.log(frac_list))
         print(popt[0])
         plt.plot(prob_list, frac_list)
         plt.xlabel(r"|$p - p_{c}$|")
         plt.ylabel(r"P")
-        plt.title(
-            r"Order parameter vs site probability for 2d site percolation, $P\sim|p-p_{c}|^{\beta}$"
-        )
+        # plt.title(
+        #     r"Order parameter vs site probability for 2d site percolation, $P\sim|p-p_{c}|^{\beta}$"
+        # )
         plt.legend(["Data"])
 
         plt.savefig("./site_data/order_fig.pdf", format="pdf")
         plt.savefig("./site_data/order_fig.svg", format="svg")
         plt.show()
 
+        fig = plt.figure(num=None, figsize=(10, 10))
+
         plt.plot(np.log(prob_list), np.log(frac_list))
         plt.plot(np.log(prob_list), func(np.log(prob_list), *popt))
         plt.xlabel(r"$\log |p-p_{c}|$")
         plt.ylabel(r"$\log P$")
-        plt.title(
-            f"Log-Log plot of order parameter vs site probability to find beta exponent $\\beta = {popt[0]}$"
-        )
+        # plt.title(
+        #     f"Log-Log plot of order parameter vs site probability to find beta exponent $\\beta = {popt[0]}$"
+        # )
         plt.legend(["Data", "Linear Regression"])
         plt.show()
 
@@ -299,21 +304,24 @@ class SitePercolation(BasePercolation):
         ns = np.arange(ph_list.size)
         p_c = (ph_list[-1] + pl_list[-1]) / 2.0
         pc_d = (ph_list[-1] - pl_list[-1]) / 2.0
-        plt.scatter(ns, ph_list)
-        plt.scatter(ns, pl_list)
-        plt.plot(ns, np.ones_like(ns) * p_c)
-        plt.legend(["Critical probability", "Upper Probability", "Lower Probability"])
-        plt.xlabel("Itteration number")
+        matplotlib.rcParams.update({"font.size": 24})
+        plt.figure(num=None, figsize=(10, 6.5))
+        plt.scatter(ns, ph_list, color="black", marker="^", label="Upper Probablilty")
+        plt.scatter(ns, pl_list, color="black", label="Lower Probablilty")
+        # plt.plot(ns, np.ones_like(ns) * p_c)
+        plt.fill_between(ns, pl_list, ph_list, color="black", alpha=0.15)
+        plt.legend()
+        plt.xlabel("Iteration number")
         plt.ylabel("Probability")
         pc_str = f"{p_c:.4f}"
         pc_d_str = f"{pc_d:.1e}"
-        plt.title(
-            r"Plot of binary search for critical probability, $p_{c} ="
-            + pc_str
-            + r"\pm"
-            + pc_d_str
-            + "$"
-        )
+        # plt.title(
+        #     r"Plot of binary search for critical probability, $p_{c} ="
+        #     + pc_str
+        #     + r"\pm"
+        #     + pc_d_str
+        #     + "$"
+        # )
         plt.savefig("./site_data/critical_prob.pdf", format="pdf")
         plt.show()
 
