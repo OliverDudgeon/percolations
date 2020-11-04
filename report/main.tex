@@ -32,11 +32,11 @@
 %bibnotes,
  amsmath,amssymb,
  aps,
-%pra,
-%prb,
-%rmp,
-%prstab,
-%prstper,
+% pra,
+% prb,
+% rmp,
+% prstab,
+% prstper,
 %floatfix,
 ]{revtex4-2}
 
@@ -196,7 +196,7 @@ Plots of the number of iterations before the simulation ended, against initial t
 
 \begin{figure}
     \centering
-    \fbox{\includegraphics[width=\linewidth]{report/assets/FF_rawdata_25probs_20reps.pdf}}
+    \fbox{\includegraphics[width=\linewidth]{report/assets/FF_rawdata_25probs_20reps_resize.pdf}}
     \caption{Forest fire iterations vs probabilities, plotted as raw data. Colour indicates the cause of termination.}
     \label{fig:FF_rawdata}
 \end{figure}
@@ -214,6 +214,7 @@ It is interesting to consider the order parameter of a forest fire simulation. E
 This apparent contradiction disappears if we remember that $p_c$ itself is not well-defined for a finite grid; this is why infinite grids are always used in theoretical work. On the other hand, no physical lattice is ever infinite, so it is interesting to consider the blurred distinction between first and second-order phase transitions in a large, but finite, percolating lattice.
 
 \section{Conclusion}
+% Reference GitHub?
 \newpage
 \bibliography{apssamp}% Produces the bibliography via BibTeX.
 
