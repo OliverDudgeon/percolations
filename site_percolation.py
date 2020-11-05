@@ -340,29 +340,29 @@ class SitePercolation(BasePercolation):
             np.save("./site_data/cluster_data.npy", numb_list)
 
         p = prob_list
-        n = p * (1 - p) ** 4  # n = 1 term
-        plt.plot(prob_list, numb_list / (10_000 * 10_000))
-        plt.plot(p, n)
-        n += 2 * p ** 2 * (1 - p) ** 6  # n = 2 term
-        plt.plot(p, n)
-        n += 2 * p ** 3 * (1 - p) ** 8 + 4 * p ** 3 * (1 - p) ** 7
-        plt.plot(p, n)
-        n += (
+        cluster_number_approx = p * (1 - p) ** 4  # n = 1 term
+        plt.plot(prob_list, numb_list / (N * N))
+        plt.plot(p, cluster_number_approx)
+        cluster_number_approx += 2 * p ** 2 * (1 - p) ** 6  # n = 2 term
+        plt.plot(p, cluster_number_approx)
+        cluster_number_approx += 2 * p ** 3 * (1 - p) ** 8 + 4 * p ** 3 * (1 - p) ** 7
+        plt.plot(p, cluster_number_approx)
+        cluster_number_approx += (
             2 * p ** 4 * (1 - p) ** 10
             + 4 * p ** 4 * (1 - p) ** 9
             + p ** 4 * (1 - p) ** 8
         )
-        plt.plot(p, n)
+        plt.plot(p, cluster_number_approx)
         plt.legend(
             [
-                "Data",
-                "Polymioes curve n = 1",
-                "Polymioes curve n = 2",
-                "Polymioes curve n = 3",
-                "Polymioes curve n = 4",
+                "Original",
+                "Polyominoes curve s = 2",
+                "Polyominoes curve s = 2",
+                "Polyominoes curve s = 3",
+                "Polyominoes curve s = 4",
             ]
         )
-        plt.xlabel("Site Probability")
-        plt.ylabel("Number of clusters")
-        plt.title("Number of clusters vs probability $n(p)$")
+        plt.xlabel(r"$p$")
+        plt.ylabel(r"$n_{p}(p)$")
+        plt.title("Normalised number of clusters vs probability $n(p)$")
         plt.show()
